@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observatorio Legislativo de Sinaloa — Energía y Movilidad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAF7;--bg-alt:#F0EFE9;--text:#1A1A2E;--text-muted:#6B7280;--text-light:#9CA3AF;
+  --border:#DEE2E6;--border-light:#ECEAE4;
+  --energia:#E8960A;--energia-light:#FFF3DC;--energia-dark:#B87308;
+  --movilidad:#2E7D32;--movilidad-light:#E8F5E9;--movilidad-dark:#1B5E20;
+  --aprobada:#0E7C42;--en-comision:#D97706;--presentada:#2563EB;--estancada:#DC2626;
+  --reforma:#6D28D9;--punto:#0891B2;--dictamen:#BE185D;
+  --font-title:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --max-w:1200px;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(250,250,247,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-light);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{font-family:var(--font-title);font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.02em}
+.nav-links{display:flex;gap:24px;list-style:none}
+.nav-links a{font-size:13px;color:var(--text-muted);text-decoration:none;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--text)}
+.hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px}
+.hamburger span{display:block;width:20px;height:2px;background:var(--text);margin:4px 0;transition:all .3s}
+.mobile-menu{display:none;position:fixed;top:56px;left:0;right:0;background:var(--bg);border-bottom:1px solid var(--border);padding:16px 24px;z-index:99}
+.mobile-menu.open{display:block}
+.mobile-menu a{display:block;padding:12px 0;color:var(--text);text-decoration:none;font-size:15px;font-weight:500;border-bottom:1px solid var(--border-light)}
+
+/* HERO */
+.hero{max-width:var(--max-w);margin:0 auto;padding:64px 24px 48px}
+.hero-grid{display:grid;grid-template-columns:1fr 320px;gap:48px;align-items:start}
+.hero-tag{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--energia);margin-bottom:16px;padding:4px 10px;background:var(--energia-light);border-radius:2px}
+.hero h1{font-family:var(--font-title);font-size:clamp(32px,5vw,52px);font-weight:700;line-height:1.05;letter-spacing:-.03em;color:var(--text);margin-bottom:16px}
+.hero h1 span{color:var(--movilidad)}
+.hero-subtitle{font-size:17px;color:var(--text-muted);font-weight:400;margin-bottom:20px}
+.hero-desc{font-size:14px;color:var(--text-muted);line-height:1.7;max-width:540px}
+.hero-aside{background:var(--text);color:#fff;padding:32px;border-radius:3px;position:relative}
+.hero-aside::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--energia);border-radius:3px 0 0 3px}
+.hero-stat{margin-bottom:24px}
+.hero-stat:last-child{margin-bottom:0}
+.hero-stat-num{font-family:var(--font-title);font-size:42px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.hero-stat-label{font-size:12px;color:#9CA3AF;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+
+/* INDICATORS */
+.indicators{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg)}
+.indicators-inner{max-width:var(--max-w);margin:0 auto;padding:24px;display:flex;justify-content:space-between}
+.indicator{text-align:center;flex:1;position:relative}
+.indicator:not(:last-child)::after{content:'';position:absolute;right:0;top:8px;bottom:8px;width:1px;background:var(--border)}
+.indicator-num{font-family:var(--font-title);font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.indicator-num.energia{color:var(--energia)}
+.indicator-num.movilidad{color:var(--movilidad)}
+.indicator-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+
+/* SECTION COMMON */
+.section{max-width:var(--max-w);margin:0 auto;padding:56px 24px}
+.section-header{margin-bottom:32px}
+.section-title{font-family:var(--font-title);font-size:24px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.section-desc{font-size:14px;color:var(--text-muted);margin-top:6px}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.chart-card{background:#fff;border:1px solid var(--border-light);border-radius:3px;padding:24px}
+.chart-card--full{grid-column:1/-1}
+.chart-title{font-family:var(--font-title);font-size:16px;font-weight:600;margin-bottom:4px}
+.chart-subtitle{font-size:12px;color:var(--text-muted);margin-bottom:20px}
+.chart-wrap{position:relative;width:100%}
+
+/* TABLE SECTION */
+.filters-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);white-space:nowrap}
+.pill-group{display:flex;gap:0}
+.pill{padding:6px 14px;font-size:13px;font-weight:500;border:1px solid var(--border);background:#fff;cursor:pointer;transition:all .15s;font-family:var(--font-body);color:var(--text-muted)}
+.pill:first-child{border-radius:3px 0 0 3px}
+.pill:last-child{border-radius:0 3px 3px 0}
+.pill:not(:first-child){margin-left:-1px}
+.pill.active{background:var(--text);color:#fff;border-color:var(--text);z-index:1;position:relative}
+.pill.active.energia-pill{background:var(--energia);border-color:var(--energia)}
+.pill.active.movilidad-pill{background:var(--movilidad);border-color:var(--movilidad)}
+select.filter-select{padding:6px 28px 6px 10px;font-size:13px;border:1px solid var(--border);border-radius:3px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E") no-repeat right 10px center;appearance:none;font-family:var(--font-body);color:var(--text);cursor:pointer}
+.search-box{position:relative;flex:1;min-width:200px}
+.search-box input{width:100%;padding:7px 12px 7px 34px;font-size:13px;border:1px solid var(--border);border-radius:3px;font-family:var(--font-body);background:#fff;color:var(--text)}
+.search-box input::placeholder{color:var(--text-light)}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-light)}
+.results-count{font-size:13px;color:var(--text-muted);margin-bottom:12px}
+.results-count strong{color:var(--text);font-weight:600}
+
+/* FILTER TOGGLE MOBILE */
+.filter-toggle-btn{display:none;padding:8px 16px;font-size:13px;font-weight:500;background:#fff;border:1px solid var(--border);border-radius:3px;cursor:pointer;font-family:var(--font-body);color:var(--text)}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.reg-table{width:100%;border-collapse:collapse;font-size:13px}
+.reg-table th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:2px solid var(--text);white-space:nowrap}
+.reg-table td{padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:top}
+.reg-table tbody tr{cursor:pointer;transition:background .1s}
+.reg-table tbody tr:hover{background:var(--bg-alt)}
+.reg-table .col-id{font-family:var(--font-title);font-weight:500;font-size:12px;white-space:nowrap;color:var(--text-muted)}
+.reg-table .col-fecha{white-space:nowrap;font-size:12px;color:var(--text-muted)}
+.reg-table .col-extracto{max-width:320px;line-height:1.5}
+.badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:11px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
+.badge-energia{background:var(--energia-light);color:var(--energia-dark)}
+.badge-movilidad{background:var(--movilidad-light);color:var(--movilidad-dark)}
+.badge-reforma{background:#EDE9FE;color:#6D28D9}
+.badge-punto{background:#E0F7FA;color:#0E7490}
+.badge-dictamen{background:#FCE4EC;color:#BE185D}
+.badge-minuta{background:#FEF3C7;color:#92400E}
+.badge-aprobada{background:#D1FAE5;color:#065F46}
+.badge-en-comision{background:#FEF3C7;color:#92400E}
+.badge-presentada{background:#DBEAFE;color:#1E40AF}
+.badge-estancada{background:#FEE2E2;color:#991B1B}
+.pdf-link{display:inline-flex;align-items:center;gap:4px;color:var(--presentada);text-decoration:none;font-size:12px;font-weight:500}
+.pdf-link:hover{text-decoration:underline}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)}
+.pagination button{padding:6px 12px;font-size:13px;border:1px solid var(--border);border-radius:3px;background:#fff;cursor:pointer;font-family:var(--font-body);color:var(--text);transition:all .15s}
+.pagination button:hover:not(:disabled){background:var(--bg-alt)}
+.pagination button:disabled{opacity:.4;cursor:default}
+.pagination .page-info{font-size:13px;color:var(--text-muted)}
+
+/* CARDS (mobile table replacement) */
+.cards-list{display:none}
+.record-card{background:#fff;border:1px solid var(--border-light);border-radius:3px;padding:16px;margin-bottom:10px}
+.record-card-header{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.record-card-id{font-family:var(--font-title);font-size:12px;color:var(--text-muted);font-weight:500}
+.record-card-date{font-size:12px;color:var(--text-light);margin-left:auto}
+.record-card-extracto{font-size:13px;line-height:1.6;color:var(--text);margin-top:8px}
+.record-card-footer{display:flex;justify-content:flex-end;margin-top:10px}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;justify-content:center;align-items:start;padding:40px 16px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:4px;max-width:640px;width:100%;padding:32px;position:relative;margin:auto}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;padding:4px;color:var(--text-muted)}
+.modal-close:hover{color:var(--text)}
+.modal h3{font-family:var(--font-title);font-size:18px;font-weight:700;margin-bottom:16px;padding-right:32px}
+.modal-field{margin-bottom:14px}
+.modal-field-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:3px}
+.modal-field-value{font-size:14px;line-height:1.6}
+.modal-extracto{font-size:14px;line-height:1.7;color:var(--text);padding:16px;background:var(--bg);border-radius:3px;margin:16px 0}
+.modal-badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.modal-link{display:inline-flex;align-items:center;gap:6px;color:var(--presentada);font-weight:500;text-decoration:none;font-size:14px;margin-top:8px}
+.modal-link:hover{text-decoration:underline}
+.modal-links{display:flex;flex-wrap:wrap;gap:16px}
+.modal-notes{margin-top:16px;padding-top:16px;border-top:1px solid var(--border-light)}
+.modal-notes summary{font-size:12px;color:var(--text-muted);cursor:pointer;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.modal-notes p{font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.6}
+
+/* METHODOLOGY */
+.methodology{max-width:65ch;margin:0 auto}
+.methodology h3{font-family:var(--font-title);font-size:16px;font-weight:600;margin:24px 0 8px;color:var(--text)}
+.methodology h3:first-child{margin-top:0}
+.methodology p,.methodology ul{font-size:14px;color:var(--text-muted);line-height:1.7}
+.methodology ul{padding-left:20px;margin-top:6px}
+.methodology li{margin-bottom:4px}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border);padding:24px;text-align:center;font-size:12px;color:var(--text-light);line-height:1.8}
+footer a{color:var(--text-muted);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .charts-grid{grid-template-columns:1fr}
+  .hero-grid{grid-template-columns:1fr;gap:24px}
+  .hero-aside{padding:24px}
+  .hero-stat-num{font-size:32px}
+}
+@media(max-width:680px){
+  .nav-links{display:none}
+  .hamburger{display:block}
+  .indicators-inner{flex-wrap:wrap;gap:0}
+  .indicator{flex:0 0 50%;padding:10px 0}
+  .indicator:not(:last-child)::after{display:none}
+  .indicator:nth-child(odd){border-right:1px solid var(--border-light)}
+  .indicator:nth-child(n+3){border-top:1px solid var(--border-light)}
+  .filters-bar{display:none}
+  .filters-bar.open{display:flex;flex-direction:column;align-items:stretch}
+  .filter-toggle-btn{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+  .filter-group{flex-direction:column;align-items:stretch}
+  .pill-group{flex-wrap:wrap}
+  .search-box{min-width:unset;width:100%}
+  .table-wrap{display:none}
+  .cards-list{display:block}
+  .hero{padding:40px 16px 32px}
+  .section{padding:40px 16px}
+  .chart-card{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <span class="nav-brand">Observatorio Legislativo Sinaloa</span>
+  <ul class="nav-links">
+    <li><a href="../">← Comparativo</a></li>
+    <li><a href="#indicadores">Indicadores</a></li>
+    <li><a href="#visualizaciones">Gráficas</a></li>
+    <li><a href="#registro">Registro</a></li>
+    <li><a href="#metodologia">Metodología</a></li>
+  </ul>
+  <button class="hamburger" onclick="document.querySelector('.mobile-menu').classList.toggle('open')" aria-label="Menú">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+<div class="mobile-menu">
+  <a href="../" onclick="this.parentElement.classList.remove('open')">← Comparativo</a>
+  <a href="#indicadores" onclick="this.parentElement.classList.remove('open')">Indicadores</a>
+  <a href="#visualizaciones" onclick="this.parentElement.classList.remove('open')">Gráficas</a>
+  <a href="#registro" onclick="this.parentElement.classList.remove('open')">Registro</a>
+  <a href="#metodologia" onclick="this.parentElement.classList.remove('open')">Metodología</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <span class="hero-tag">LXIV – LXV Legislaturas · 2021–2027</span>
+      <h1>Observatorio Legislativo<br>de <span>Sinaloa</span></h1>
+      <p class="hero-subtitle">Energía y Movilidad</p>
+      <p class="hero-desc">Registro sistematizado de la actividad legislativa del Congreso de Sinaloa en materia de energía y movilidad. Construido a partir del análisis de las iniciativas y minutas publicadas en la Gaceta Parlamentaria del Congreso del Estado, filtradas por términos clave de energía y movilidad.</p>
+    </div>
+    <div class="hero-aside">
+      <div class="hero-stat">
+        <div class="hero-stat-num">23</div>
+        <div class="hero-stat-label">Documentos legislativos</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">2</div>
+        <div class="hero-stat-label">Macrotemas: Energía y Movilidad</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" style="font-size:24px">Oct 2021 — Feb 2026</div>
+        <div class="hero-stat-label">Período cubierto</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INDICATORS -->
+<section class="indicators" id="indicadores">
+  <div class="indicators-inner">
+    <div class="indicator">
+      <div class="indicator-num">23</div>
+      <div class="indicator-label">Documentos</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-num energia">2</div>
+      <div class="indicator-label">Energía</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-num movilidad">21</div>
+      <div class="indicator-label">Movilidad</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-num">2</div>
+      <div class="indicator-label">Dictaminadas</div>
+    </div>
+    <div class="indicator">
+      <div class="indicator-num">6</div>
+      <div class="indicator-label">Subtemas</div>
+    </div>
+  </div>
+</section>
+
+<!-- CHARTS -->
+<section class="section" id="visualizaciones">
+  <div class="section-header">
+    <h2 class="section-title">Visualizaciones</h2>
+    <p class="section-desc">Panorama de la actividad legislativa por tema, tipo de acto y evolución temporal</p>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card chart-card--full">
+      <div class="chart-title">Documentos por subtema</div>
+      <div class="chart-subtitle">Ordenados por volumen, coloreados por macrotema</div>
+      <div class="chart-wrap"><canvas id="chartSubtema"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tipo de acto legislativo</div>
+      <div class="chart-subtitle">Distribución de los 23 documentos</div>
+      <div class="chart-wrap" style="max-width:320px;margin:0 auto"><canvas id="chartTipo"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Estatus por macrotema</div>
+      <div class="chart-subtitle">Estado procesal de cada iniciativa</div>
+      <div class="chart-wrap"><canvas id="chartEstatus"></canvas></div>
+    </div>
+    <div class="chart-card chart-card--full">
+      <div class="chart-title">Evolución mensual</div>
+      <div class="chart-subtitle">Documentos presentados por mes, apilados por macrotema</div>
+      <div class="chart-wrap"><canvas id="chartMensual"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- TABLE -->
+<section class="section" id="registro">
+  <div class="section-header">
+    <h2 class="section-title">Registro legislativo</h2>
+    <p class="section-desc">Explora los 23 documentos clasificados</p>
+  </div>
+
+  <button class="filter-toggle-btn" onclick="document.querySelector('.filters-bar').classList.toggle('open')">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Filtros
+  </button>
+
+  <div class="filters-bar">
+    <div class="filter-group">
+      <span class="filter-label">Macrotema</span>
+      <div class="pill-group" id="filterMacrotema">
+        <button class="pill active" data-val="">Todos</button>
+        <button class="pill energia-pill" data-val="Energía">Energía</button>
+        <button class="pill movilidad-pill" data-val="Movilidad">Movilidad</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Subtema</span>
+      <select class="filter-select" id="filterSubtema">
+        <option value="">Todos</option>
+        <optgroup label="Energía"></optgroup>
+        <optgroup label="Movilidad"></optgroup>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Tipo</span>
+      <select class="filter-select" id="filterTipo">
+        <option value="">Todos</option>
+        <option>Reforma legislativa</option>
+        <option>Minuta</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Estatus</span>
+      <select class="filter-select" id="filterEstatus">
+        <option value="">Todos</option>
+        <option>En estudio</option>
+        <option>Presentada</option>
+        <option>Dictaminada</option>
+        <option>Se Toma en Consideración</option>
+      </select>
+    </div>
+    <div class="search-box">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" placeholder="Buscar por ID, extracto o notas...">
+    </div>
+  </div>
+
+  <div class="results-count" id="resultsCount"></div>
+
+  <div class="table-wrap">
+    <table class="reg-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Fecha</th><th>Tipo</th><th>Estatus</th><th>Macrotema</th><th>Subtema</th><th>Extracto</th><th>PDF</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="cards-list" id="cardsList"></div>
+  <div class="pagination" id="pagination"></div>
+</section>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- METHODOLOGY -->
+<section class="section" id="metodologia">
+  <div class="section-header">
+    <h2 class="section-title">Notas metodológicas</h2>
+  </div>
+  <div class="methodology">
+    <h3>Obtención de datos</h3>
+    <p>Los registros fueron extraídos de la Gaceta Parlamentaria del Congreso del Estado de Sinaloa (gaceta.congresosinaloa.gob.mx) mediante consulta directa de iniciativas y minutas publicadas en las LXIV y LXV Legislaturas. Se identificaron 23 documentos legislativos relevantes a los temas de energía y movilidad.</p>
+
+    <h3>Términos de búsqueda</h3>
+    <p>Se utilizaron los siguientes términos en la revisión del portal:</p>
+    <ul>
+      <li><strong>Energía:</strong> energía (2 resultados)</li>
+      <li><strong>Movilidad:</strong> movilidad (20), transporte (1)</li>
+    </ul>
+
+    <h3>Criterios de clasificación</h3>
+    <p>Cada documento fue clasificado por macrotema (Energía o Movilidad), subtema específico, tipo de acto legislativo (Reforma legislativa o Minuta) y estatus procesal. La clasificación se realizó a partir de la lectura de las iniciativas y de los epígrafes publicados en la gaceta. Todos los registros cuentan con verificación de fuente.</p>
+
+    <h3>Limitaciones</h3>
+    <ul>
+      <li>Los estatus procesales reflejan la información disponible al momento del análisis y pueden no estar actualizados.</li>
+      <li>La cobertura abarca dos legislaturas consecutivas para registrar la continuidad de la agenda legislativa en estos temas.</li>
+    </ul>
+
+    <h3>Última actualización</h3>
+    <p>Abril 2026. Datos correspondientes al período octubre 2021 – febrero 2026.</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  Observatorio Legislativo de Sinaloa · Datos públicos de las LXIV y LXV Legislaturas del Estado<br>
+  <a href="https://gaceta.congresosinaloa.gob.mx" target="_blank" rel="noopener">gaceta.congresosinaloa.gob.mx</a>
+  &nbsp;·&nbsp; Contenido bajo licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>
+</footer>
+
+<script>
+/* ── HELPERS ── */
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`}
+function capitalize(s){return s?s.charAt(0).toUpperCase()+s.slice(1):''}
+function slugify(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'-')}
+function badgeClass(type,val){
+  const map={
+    macrotema:{Energía:'badge-energia',Movilidad:'badge-movilidad'},
+    tipo_acto:{'Reforma legislativa':'badge-reforma','Punto de Acuerdo':'badge-punto',Dictamen:'badge-dictamen',Minuta:'badge-minuta'},
+    estatus:{'En estudio':'badge-en-comision','Presentada':'badge-presentada','Dictaminada':'badge-aprobada','Se Toma en Consideración':'badge-en-comision'}
+  };
+  return(map[type]&&map[type][val])||'';
+}
+
+/* ── SUBTEMA DROPDOWN ── */
+(function(){
+  const sel=document.getElementById('filterSubtema');
+  const groups=sel.querySelectorAll('optgroup');
+  const ene=groups[0],mov=groups[1];
+  Object.entries(SUBTEMAS).forEach(([k,v])=>{
+    const opt=document.createElement('option');opt.value=k;opt.textContent=v;
+    if(k.startsWith('ENE'))ene.appendChild(opt);else mov.appendChild(opt);
+  });
+})();
+
+/* ── CHARTS ── */
+Chart.defaults.font.family="'Inter',system-ui,sans-serif";
+Chart.defaults.font.size=12;
+Chart.defaults.color='#6B7280';
+Chart.defaults.plugins.legend.display=false;
+
+// 1. Subtema horizontal bar
+(function(){
+  const counts={};
+  DATA.forEach(d=>{counts[d.subtema]=(counts[d.subtema]||0)+1});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const labels=sorted.map(([k])=>SUBTEMAS[k]||k);
+  const values=sorted.map(([,v])=>v);
+  const colors=sorted.map(([k])=>k.startsWith('ENE')?'#E8960A':'#2E7D32');
+  new Chart(document.getElementById('chartSubtema'),{
+    type:'bar',
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderRadius:2,barThickness:24}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{tooltip:{callbacks:{label:ctx=>ctx.raw+' documentos'}}},
+      scales:{x:{grid:{color:'#F0EFE9'},ticks:{stepSize:1}},y:{grid:{display:false}}}}
+  });
+  document.getElementById('chartSubtema').parentElement.style.height=sorted.length*44+'px';
+})();
+
+// 2. Donut tipo de acto
+(function(){
+  const counts={};
+  DATA.forEach(d=>{counts[d.tipo_acto]=(counts[d.tipo_acto]||0)+1});
+  const labels=Object.keys(counts);
+  const values=Object.values(counts);
+  const colors=['#6D28D9','#0891B2','#BE185D','#D97706'];
+  const total=DATA.length;
+  const chart=new Chart(document.getElementById('chartTipo'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,cutout:'62%',
+      plugins:{legend:{display:true,position:'bottom',labels:{padding:16,usePointStyle:true,pointStyle:'circle'}},
+        tooltip:{callbacks:{label:ctx=>ctx.label+': '+ctx.raw+' ('+Math.round(ctx.raw/total*100)+'%)'}}}}
+  });
+  const centerPlugin={id:'centerText',afterDraw(chart){
+    const{ctx,chartArea:{width,height,top,left}}=chart;
+    ctx.save();ctx.font='700 28px "Space Grotesk",sans-serif';ctx.fillStyle='#1A1A2E';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(total,left+width/2,top+height/2-8);
+    ctx.font='400 11px "Inter",sans-serif';ctx.fillStyle='#9CA3AF';
+    ctx.fillText('documentos',left+width/2,top+height/2+14);
+    ctx.restore();
+  }};
+  chart.config.plugins=[centerPlugin];chart.update();
+})();
+
+// 3. Stacked monthly
+(function(){
+  const months={};
+  DATA.forEach(d=>{
+    const ym=d.fecha.substring(0,7);
+    if(!months[ym])months[ym]={Energía:0,Movilidad:0};
+    months[ym][d.macrotema]++;
+  });
+  const sorted=Object.keys(months).sort();
+  const labels=sorted.map(ym=>{const[y,m]=ym.split('-');const mn=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][+m-1];return mn+' '+y});
+  new Chart(document.getElementById('chartMensual'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Energía',data:sorted.map(k=>months[k].Energía),backgroundColor:'#E8960A',borderRadius:2},
+      {label:'Movilidad',data:sorted.map(k=>months[k].Movilidad),backgroundColor:'#2E7D32',borderRadius:2}
+    ]},
+    options:{responsive:true,
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:16}},
+        tooltip:{mode:'index',intersect:false}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#F0EFE9'},ticks:{stepSize:1}}}}
+  });
+})();
+
+// 4. Grouped estatus
+(function(){
+  const estatuses=['En estudio','Presentada','Dictaminada','Se Toma en Consideración'];
+  const ene=[],mov=[];
+  estatuses.forEach(e=>{
+    ene.push(DATA.filter(d=>d.macrotema==='Energía'&&d.estatus===e).length);
+    mov.push(DATA.filter(d=>d.macrotema==='Movilidad'&&d.estatus===e).length);
+  });
+  new Chart(document.getElementById('chartEstatus'),{
+    type:'bar',
+    data:{labels:estatuses,datasets:[
+      {label:'Energía',data:ene,backgroundColor:'#E8960A',borderRadius:2},
+      {label:'Movilidad',data:mov,backgroundColor:'#2E7D32',borderRadius:2}
+    ]},
+    options:{responsive:true,
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:16}},
+        tooltip:{mode:'index',intersect:false}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'#F0EFE9'},ticks:{stepSize:1}}}}
+  });
+})();
+
+/* ── TABLE & FILTERS ── */
+let currentPage=1;const perPage=20;
+let filtered=[...DATA];
+
+function getFilters(){
+  const macro=document.querySelector('#filterMacrotema .pill.active').dataset.val;
+  const sub=document.getElementById('filterSubtema').value;
+  const tipo=document.getElementById('filterTipo').value;
+  const est=document.getElementById('filterEstatus').value;
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  return{macro,sub,tipo,est,q};
+}
+
+function applyFilters(){
+  const{macro,sub,tipo,est,q}=getFilters();
+  filtered=DATA.filter(d=>{
+    if(macro&&d.macrotema!==macro)return false;
+    if(sub&&d.subtema!==sub)return false;
+    if(tipo&&d.tipo_acto!==tipo)return false;
+    if(est&&d.estatus!==est)return false;
+    if(q&&!(d.id.toLowerCase().includes(q)||d.extracto.toLowerCase().includes(q)||(d.notas&&d.notas.toLowerCase().includes(q))))return false;
+    return true;
+  });
+  currentPage=1;
+  render();
+}
+
+function render(){
+  const start=(currentPage-1)*perPage;
+  const page=filtered.slice(start,start+perPage);
+  const totalPages=Math.ceil(filtered.length/perPage)||1;
+
+  document.getElementById('resultsCount').innerHTML=
+    `Mostrando <strong>${filtered.length}</strong> de ${DATA.length} documentos`;
+
+  // Table
+  const tbody=document.getElementById('tableBody');
+  tbody.innerHTML=page.map(d=>`
+    <tr onclick="openModal('${d.id}')">
+      <td class="col-id">${d.id}</td>
+      <td class="col-fecha">${fmtDate(d.fecha)}</td>
+      <td><span class="badge ${badgeClass('tipo_acto',d.tipo_acto)}">${d.tipo_acto}</span></td>
+      <td><span class="badge ${badgeClass('estatus',d.estatus)}">${d.estatus}</span></td>
+      <td><span class="badge ${badgeClass('macrotema',d.macrotema)}">${d.macrotema}</span></td>
+      <td style="font-size:12px">${SUBTEMAS[d.subtema]||d.subtema}</td>
+      <td class="col-extracto" title="${d.extracto}">${capitalize(d.extracto.length>120?d.extracto.slice(0,120)+'…':d.extracto)}</td>
+      <td>${d.link_documento?`<a href="${d.link_documento}" target="_blank" rel="noopener" class="pdf-link" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2"/></svg>PDF</a>`:''}</td>
+    </tr>`).join('');
+
+  // Cards (mobile)
+  const cards=document.getElementById('cardsList');
+  cards.innerHTML=page.map(d=>`
+    <div class="record-card" onclick="openModal('${d.id}')">
+      <div class="record-card-header">
+        <span class="record-card-id">${d.id}</span>
+        <span class="badge ${badgeClass('macrotema',d.macrotema)}">${d.macrotema}</span>
+        <span class="badge ${badgeClass('tipo_acto',d.tipo_acto)}">${d.tipo_acto}</span>
+        <span class="badge ${badgeClass('estatus',d.estatus)}">${d.estatus}</span>
+        <span class="record-card-date">${fmtDate(d.fecha)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted)">${SUBTEMAS[d.subtema]||d.subtema}</div>
+      <div class="record-card-extracto">${capitalize(d.extracto.length>160?d.extracto.slice(0,160)+'…':d.extracto)}</div>
+      <div class="record-card-footer">
+        ${d.link_documento?`<a href="${d.link_documento}" target="_blank" rel="noopener" class="pdf-link" onclick="event.stopPropagation()"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2"/></svg>PDF</a>`:''}
+      </div>
+    </div>`).join('');
+
+  // Pagination
+  const pag=document.getElementById('pagination');
+  pag.innerHTML=`
+    <button onclick="currentPage--;render()" ${currentPage<=1?'disabled':''}>← Anterior</button>
+    <span class="page-info">Página ${currentPage} de ${totalPages}</span>
+    <button onclick="currentPage++;render()" ${currentPage>=totalPages?'disabled':''}>Siguiente →</button>`;
+}
+
+// Pill toggles
+document.querySelectorAll('.pill-group').forEach(group=>{
+  group.querySelectorAll('.pill').forEach(pill=>{
+    pill.addEventListener('click',()=>{
+      group.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+      pill.classList.add('active');
+      applyFilters();
+    });
+  });
+});
+
+// Select & search filters
+['filterSubtema','filterTipo','filterEstatus'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',applyFilters);
+});
+document.getElementById('searchInput').addEventListener('input',applyFilters);
+
+// Modal
+function openModal(id){
+  const d=DATA.find(r=>r.id===id);if(!d)return;
+  const overlay=document.getElementById('modalOverlay');
+  document.getElementById('modalContent').innerHTML=`
+    <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <h3>${d.id}</h3>
+    <div class="modal-badges">
+      <span class="badge ${badgeClass('macrotema',d.macrotema)}">${d.macrotema}</span>
+      <span class="badge ${badgeClass('tipo_acto',d.tipo_acto)}">${d.tipo_acto}</span>
+      <span class="badge ${badgeClass('estatus',d.estatus)}">${d.estatus}</span>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Fecha</div>
+      <div class="modal-field-value">${fmtDate(d.fecha)}</div>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">Subtema</div>
+      <div class="modal-field-value">${SUBTEMAS[d.subtema]||d.subtema}${d.subtema_secundario?' · Secundario: '+(SUBTEMAS[d.subtema_secundario]||d.subtema_secundario):''}</div>
+    </div>
+    ${d.resumen?`<div class="modal-field"><div class="modal-field-label">Resumen</div><div class="modal-field-value">${d.resumen}</div></div>`:''}
+    <div class="modal-extracto">${capitalize(d.extracto)}</div>
+    <div class="modal-links">
+      ${d.link_documento?`<a href="${d.link_documento}" target="_blank" rel="noopener" class="modal-link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2"/></svg>Ver documento</a>`:''}
+      ${d.link_portal?`<a href="${d.link_portal}" target="_blank" rel="noopener" class="modal-link"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3H3v10h10v-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M9 2h5v5M14 2L7 9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Portal del Congreso</a>`:''}
+    </div>
+    ${d.fuente_verificada==='Sí'?'<div style="margin-top:12px;font-size:12px;color:var(--aprobada);font-weight:600">✓ Fuente verificada</div>':''}
+    ${d.notas?`<details class="modal-notes"><summary>Notas de clasificación</summary><p>${d.notas}</p></details>`:''}
+  `;
+  overlay.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+document.getElementById('modalOverlay').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)closeModal();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// Initial render
+applyFilters();
+</script>
+</body>
+</html>
