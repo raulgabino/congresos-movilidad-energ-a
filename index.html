@@ -229,6 +229,9 @@ footer a:hover{text-decoration:underline}
   .indicator-num{font-size:20px}
   .indicator-label{font-size:9px}
 
+  .act-divider{padding:40px 16px 12px}
+  .act-title{font-size:22px}
+  .act-intro{font-size:14px}
   .section{padding:32px 16px}
   .section-title{font-size:20px}
   .section-desc{font-size:13px}
@@ -252,6 +255,10 @@ footer a:hover{text-decoration:underline}
   .state-card{flex:0 0 200px;min-width:200px;padding:16px}
   .state-cards-arrow{display:none}
   .state-card-stat-num{font-size:20px}
+
+  .proporcion-nums{gap:24px}
+  .proporcion-pct{font-size:32px}
+  .proporcion-bar{max-width:100%}
 
   /* Filtros */
   .filters-bar{display:none}
@@ -361,6 +368,37 @@ body.has-fullscreen-table{overflow:hidden}
 .rosling-svg .heat-group-lbl{font-size:11px;font-weight:700;letter-spacing:.08em}
 .rosling-svg .heat-cell{transition:stroke .12s}
 .rosling-svg .heat-cell:hover{stroke:#1A1A1A;stroke-width:1.5}
+
+/* ── Proporción viz ── */
+.proporcion-viz{display:flex;flex-direction:column;align-items:center;gap:20px;padding:24px 0}
+.proporcion-nums{display:flex;justify-content:center;gap:48px;width:100%}
+.proporcion-item{text-align:center}
+.proporcion-pct{font-family:var(--font-title);font-size:42px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.proporcion-label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:6px}
+.proporcion-bar{width:100%;max-width:480px;height:14px;border-radius:7px;overflow:hidden;display:flex;background:#F0EFE9}
+.proporcion-bar-seg{height:100%;transition:width .6s ease}
+
+/* ── Pipeline viz ── */
+.pipeline-viz{position:relative;width:100%;padding:8px 0}
+.pipeline-svg{display:block;width:100%;height:auto}
+.pipeline-svg text{font-family:var(--font-body)}
+.pipeline-flow{opacity:.85;transition:opacity .15s}
+.pipeline-flow:hover{opacity:1}
+
+/* ── STORYTELLING: Act headers ── */
+.act-divider{max-width:var(--max-w);margin:0 auto;padding:64px 24px 16px}
+.act-label{font-family:var(--font-body);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--energia);margin-bottom:8px}
+.act-title{font-family:var(--font-title);font-size:28px;font-weight:700;letter-spacing:-.02em;color:var(--text);margin-bottom:10px}
+.act-intro{font-size:15px;color:var(--text-muted);line-height:1.6;max-width:720px}
+
+/* ── STORYTELLING: Progressive reveal ── */
+.reveal-stage{opacity:0;transform:translateY(12px);transition:opacity .6s ease,transform .6s ease}
+.reveal-stage.revealed{opacity:1;transform:translateY(0)}
+#cross-scatter .quad-line{opacity:0;transition:opacity .5s ease .4s}
+#cross-scatter .quad-lbl{opacity:0;transition:opacity .5s ease .8s}
+#cross-scatter.scatter-revealed .quad-line,
+#cross-scatter.scatter-revealed .quad-lbl{opacity:1}
+
 @media (max-width:680px){
   .rosling-svg .quad-lbl{font-size:8px}
   .rosling-svg .scatter-lbl{font-size:9px}
@@ -427,23 +465,32 @@ body.has-fullscreen-table{overflow:hidden}
   <div class="indicators-inner" id="indicatorsBar"></div>
 </section>
 
+<!-- ACT 1 -->
+<div class="act-divider">
+  <div class="act-label">Parte 1</div>
+  <div class="act-title">El escenario</div>
+  <p class="act-intro">Desde octubre de 2024, este observatorio registra cómo legislan 27 congresos estatales en materia de energía y movilidad. ¿Qué tan activos son? ¿En qué temas se concentran? El mapa y las tarjetas de estado dan la primera lectura.</p>
+</div>
+
 <!-- MAPA DE MÉXICO -->
 <section class="mapa-section" id="mapa">
   <div class="section-header">
-    <h2 class="section-title">Mapa de actividad legislativa</h2>
+    <h2 class="section-title">La actividad legislativa no se distribuye uniformemente</h2>
     <p class="section-desc">Intensidad de color según número de documentos. Haz clic en un estado para filtrar el dashboard.</p>
   </div>
   <div class="mapa-card">
     <button class="mapa-clear-btn" id="mapaClearBtn" type="button" onclick="window.stateBus.emit('select', null)">× Limpiar selección</button>
     <div class="mapa-svg-wrap" id="mapa-svg-wrap"></div>
-    <div class="mapa-legend" id="mapa-legend"></div>
+    <div class="reveal-stage" id="mapa-legend-reveal">
+      <div class="mapa-legend" id="mapa-legend"></div>
+    </div>
   </div>
 </section>
 
 <!-- STATE CARDS -->
 <section class="section" id="estados">
   <div class="section-header">
-    <h2 class="section-title">Estados analizados</h2>
+    <h2 class="section-title">27 congresos, estado por estado</h2>
     <p class="section-desc">Accede al detalle de cada congreso estatal</p>
   </div>
   <div class="state-cards-wrap">
@@ -453,10 +500,17 @@ body.has-fullscreen-table{overflow:hidden}
   </div>
 </section>
 
+<!-- ACT 2 -->
+<div class="act-divider">
+  <div class="act-label">Parte 2</div>
+  <div class="act-title">Las diferencias</div>
+  <p class="act-intro">La actividad no es uniforme. Movilidad domina la agenda legislativa sobre energía. Un solo estado puede concentrar más documentos que diez juntos. Y la brecha cambia mes a mes. Las gráficas comparativas y la evolución temporal muestran dónde están las asimetrías.</p>
+</div>
+
 <!-- COMPARATIVE CHARTS -->
 <section class="section" id="comparativo">
   <div class="section-header">
-    <h2 class="section-title">Análisis comparativo</h2>
+    <h2 class="section-title">Una misma agenda, resultados muy distintos</h2>
     <p class="section-desc">Actividad legislativa lado a lado entre estados</p>
   </div>
   <div class="charts-grid">
@@ -467,13 +521,13 @@ body.has-fullscreen-table{overflow:hidden}
     </div>
     <div class="chart-card">
       <div class="chart-title">Proporción Energía / Movilidad</div>
-      <div class="chart-subtitle">Distribución de macrotema por estado</div>
-      <div class="chart-wrap"><canvas id="chartMacro"></canvas></div>
+      <div class="chart-subtitle">Distribución global entre los dos macrotemas monitoreados</div>
+      <div id="proporcion-viz" class="proporcion-viz"></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Estatus homologado</div>
-      <div class="chart-subtitle">En proceso · Aprobado · Archivado · Atendido</div>
-      <div class="chart-wrap"><canvas id="chartEstatus"></canvas></div>
+      <div class="chart-title">¿Qué pasa con las iniciativas?</div>
+      <div class="chart-subtitle">Flujo de los documentos legislativos según su estatus actual</div>
+      <div id="pipeline-viz" class="pipeline-viz"></div>
     </div>
     <div class="chart-card chart-card--full">
       <div class="chart-title">Evolución mensual combinada</div>
@@ -486,7 +540,7 @@ body.has-fullscreen-table{overflow:hidden}
 <!-- EVOLUCIÓN TIPO ROSLING -->
 <section class="section" id="evolucion">
   <div class="section-header">
-    <h2 class="section-title">Evolución temporal</h2>
+    <h2 class="section-title">Mes a mes: ¿quién acelera y quién se estanca?</h2>
     <p class="section-desc">Cómo cambia la actividad legislativa mes a mes desde octubre 2024</p>
   </div>
 
@@ -529,10 +583,17 @@ body.has-fullscreen-table{overflow:hidden}
   </div>
 </section>
 
+<!-- ACT 3 -->
+<div class="act-divider">
+  <div class="act-label">Parte 3</div>
+  <div class="act-title">Los matices</div>
+  <p class="act-intro">Los totales no cuentan toda la historia. Al cruzar volumen con tasa de aprobación, emergen estilos legislativos distintos: estados que presentan poco pero aprueban mucho, y estados prolíficos con baja efectividad. Esta sección revela lo que los agregados ocultan.</p>
+</div>
+
 <!-- CRUCES ANALÍTICOS -->
 <section class="section" id="cruces">
   <div class="section-header">
-    <h2 class="section-title">Cruces analíticos</h2>
+    <h2 class="section-title">Más iniciativas no siempre significa mayor efectividad</h2>
     <p class="section-desc">Lecturas que combinan dimensiones para revelar patrones que los totales no muestran</p>
   </div>
 
@@ -560,7 +621,7 @@ body.has-fullscreen-table{overflow:hidden}
 <!-- UNIFIED TABLE -->
 <section class="section" id="registro">
   <div class="section-header">
-    <h2 class="section-title">Registro unificado</h2>
+    <h2 class="section-title">Los documentos, uno por uno</h2>
     <p class="section-desc" id="tableSubtitle"></p>
   </div>
 
@@ -915,36 +976,200 @@ const stateColors=ESTADO_NAMES.map(n=>stateColor(n));
   });
 })();
 
-// 2. Macrotema stacked
+// 2. Proporción Energía / Movilidad — aggregated
 (function(){
-  const datasets=[
-    {label:'Energía',data:ESTADO_NAMES.map(n=>STATE_METRICS[n].energia),backgroundColor:'#E8960A',borderRadius:2},
-    {label:'Movilidad',data:ESTADO_NAMES.map(n=>STATE_METRICS[n].movilidad),backgroundColor:'#2E7D32',borderRadius:2}
-  ];
-  new Chart(document.getElementById('chartMacro'),{
-    type:'bar',data:{labels:stateLabels(),datasets},
-    options:{responsive:true,maintainAspectRatio:!isMobile(),indexAxis:isMobile()?'y':'x',
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:16,font:{size:isMobile()?10:12}}},
-        tooltip:{callbacks:{label:ctx=>{const t=STATE_METRICS[ESTADO_NAMES[ctx.dataIndex]].total;return ctx.dataset.label+': '+ctx.raw+(t?' ('+Math.round(ctx.raw/t*100)+'%)':'');}}}},
-      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:isMobile()?9:11}}},y:{stacked:true,grid:{color:'#F0EFE9'},ticks:{font:{size:isMobile()?9:11}}}}}
-  });
-  if(isMobile())document.getElementById('chartMacro').parentElement.style.height='380px';
+  var wrap = document.getElementById('proporcion-viz');
+  if(!wrap) return;
+  var totalE = 0, totalM = 0;
+  DATA_FILTERED.forEach(function(d){ if(d.macrotema==='Energía') totalE++; else totalM++; });
+  var total = totalE + totalM;
+  var pctE = Math.round(totalE / total * 100);
+  var pctM = 100 - pctE;
+
+  wrap.innerHTML =
+    '<div class="proporcion-nums">' +
+      '<div class="proporcion-item">' +
+        '<div class="proporcion-pct" style="color:#E8960A">' + pctE + '%</div>' +
+        '<div class="proporcion-label" style="color:#E8960A">Energía</div>' +
+        '<div style="font-size:12px;color:#6B7280;margin-top:2px">' + totalE + ' documentos</div>' +
+      '</div>' +
+      '<div class="proporcion-item">' +
+        '<div class="proporcion-pct" style="color:#2E7D32">' + pctM + '%</div>' +
+        '<div class="proporcion-label" style="color:#2E7D32">Movilidad</div>' +
+        '<div style="font-size:12px;color:#6B7280;margin-top:2px">' + totalM + ' documentos</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="proporcion-bar">' +
+      '<div class="proporcion-bar-seg" style="width:' + pctE + '%;background:#E8960A"></div>' +
+      '<div class="proporcion-bar-seg" style="width:' + pctM + '%;background:#2E7D32"></div>' +
+    '</div>';
 })();
 
-// 3. Estatus homologado grouped
+// 3. Estatus homologado — refined pipeline
 (function(){
-  const cats=['En proceso','Aprobado','Archivado','Atendido'];
-  const datasets=ESTADO_NAMES.map((n,i)=>({
-    label:n,data:cats.map(c=>DATA_FILTERED.filter(d=>d.estado===n&&estatusH(d.estatus)===c).length),backgroundColor:stateColors[i],borderRadius:2
-  }));
-  new Chart(document.getElementById('chartEstatus'),{
-    type:'bar',data:{labels:cats,datasets},
-    options:{responsive:true,maintainAspectRatio:!isMobile(),
-      plugins:{legend:{display:!isMobile(),position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
-        tooltip:{mode:'index',intersect:false}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:isMobile()?10:12}}},y:{grid:{color:'#F0EFE9'},ticks:{stepSize:isMobile()?20:10,font:{size:isMobile()?9:11}}}}}
+  var wrap = document.getElementById('pipeline-viz');
+  if(!wrap || !window.d3) return;
+
+  var cats = [
+    {key:'En proceso', color:'#94A3B8', accent:'#64748B'},
+    {key:'Aprobado',   color:'#4ADE80', accent:'#16A34A'},
+    {key:'Archivado',  color:'#FB923C', accent:'#EA580C'},
+    {key:'Atendido',   color:'#C084FC', accent:'#9333EA'}
+  ];
+  var counts = {};
+  cats.forEach(function(c){ counts[c.key] = 0; });
+  DATA_FILTERED.forEach(function(d){
+    var s = estatusH(d.estatus);
+    if(counts[s] !== undefined) counts[s]++;
   });
-  if(isMobile())document.getElementById('chartEstatus').parentElement.style.height='280px';
+  var total = DATA_FILTERED.length;
+
+  var mob = isMobile();
+  var W = mob ? 360 : 520;
+  var H = mob ? 260 : 240;
+  var pad = {top:20, bottom:20};
+  var srcX = mob ? 80 : 100;
+  var dstX = mob ? 200 : 300;
+  var labelX = dstX + 14;
+  var srcW = mob ? 64 : 80;
+  var flowH = H - pad.top - pad.bottom;
+  var gap = 4;
+
+  /* compute flow sizes */
+  var flows = [];
+  var minH = mob ? 6 : 8;
+  cats.forEach(function(c){
+    var n = counts[c.key];
+    var h = Math.max(flowH * (n / total), minH);
+    flows.push({label:c.key, count:n, pct:Math.round(n/total*100), color:c.color, accent:c.accent, h:h});
+  });
+  /* normalize to fit with gaps */
+  var rawSum = flows.reduce(function(s,f){return s+f.h;},0) + gap*(flows.length-1);
+  var scale = flowH / rawSum;
+  var y = pad.top;
+  flows.forEach(function(f){
+    f.h = f.h * scale;
+    f.y = y;
+    y += f.h + gap * scale;
+  });
+
+  /* source block center */
+  var srcTop = flows[0].y;
+  var srcBot = flows[flows.length-1].y + flows[flows.length-1].h;
+  var srcH = srcBot - srcTop;
+  var srcMid = srcTop + srcH/2;
+
+  var svg = d3.select(wrap).append('svg')
+    .attr('class','pipeline-svg')
+    .attr('viewBox','0 0 '+W+' '+H)
+    .attr('width','100%')
+    .attr('preserveAspectRatio','xMidYMid meet');
+
+  /* defs: gradients for each flow */
+  var defs = svg.append('defs');
+  flows.forEach(function(f,i){
+    var grad = defs.append('linearGradient')
+      .attr('id','flow-grad-'+i)
+      .attr('x1','0%').attr('x2','100%');
+    grad.append('stop').attr('offset','0%').attr('stop-color',f.accent).attr('stop-opacity',.6);
+    grad.append('stop').attr('offset','100%').attr('stop-color',f.color).attr('stop-opacity',.35);
+  });
+
+  /* left: source pill */
+  var pillW = srcW;
+  var pillR = 8;
+  svg.append('rect')
+    .attr('x', srcX - pillW).attr('y', srcTop)
+    .attr('width', pillW).attr('height', srcH)
+    .attr('rx', pillR).attr('fill','#1E293B');
+  svg.append('text')
+    .attr('x', srcX - pillW/2).attr('y', srcMid - 4)
+    .attr('text-anchor','middle')
+    .attr('fill','#fff')
+    .style('font-family','var(--font-title)')
+    .style('font-size', mob?'22px':'26px')
+    .style('font-weight','700')
+    .text(total);
+  svg.append('text')
+    .attr('x', srcX - pillW/2).attr('y', srcMid + (mob?14:16))
+    .attr('text-anchor','middle')
+    .attr('fill','rgba(255,255,255,.6)')
+    .style('font-size', mob?'9px':'10px')
+    .style('letter-spacing','.06em')
+    .style('text-transform','uppercase')
+    .text('documentos');
+
+  /* draw flows */
+  var srcYOff = srcTop;
+  flows.forEach(function(f,i){
+    /* source span proportional to count */
+    var srcSpan = srcH * (f.count / total);
+    if(srcSpan < 3) srcSpan = 3;
+    var sY0 = srcYOff;
+    var sY1 = srcYOff + srcSpan;
+    srcYOff += srcSpan;
+
+    var dY0 = f.y;
+    var dY1 = f.y + f.h;
+    var cx = (srcX + dstX) / 2;
+
+    var path = 'M'+srcX+','+sY0+
+      ' C'+cx+','+sY0+' '+cx+','+dY0+' '+dstX+','+dY0+
+      ' L'+dstX+','+dY1+
+      ' C'+cx+','+dY1+' '+cx+','+sY1+' '+srcX+','+sY1+
+      ' Z';
+
+    var g = svg.append('g').attr('class','pipeline-flow');
+    g.append('path')
+      .attr('d', path)
+      .attr('fill', 'url(#flow-grad-'+i+')')
+      .style('cursor','default');
+
+    /* destination: small colored dot + text labels */
+    var midY = dY0 + f.h / 2;
+
+    /* dot */
+    g.append('circle')
+      .attr('cx', dstX + 5).attr('cy', midY)
+      .attr('r', Math.max(f.h * 0.2, 3))
+      .attr('fill', f.accent);
+
+    /* percentage */
+    g.append('text')
+      .attr('x', labelX + 6).attr('y', midY - (f.h > 30 ? 4 : 1))
+      .attr('dominant-baseline', f.h > 30 ? 'auto' : 'middle')
+      .attr('fill', f.accent)
+      .style('font-family','var(--font-title)')
+      .style('font-size', f.h > 30 ? (mob?'18px':'20px') : (mob?'11px':'12px'))
+      .style('font-weight','700')
+      .text(f.pct + '%');
+
+    if(f.h > 30){
+      /* label + count on two lines for big flows */
+      g.append('text')
+        .attr('x', labelX + 6 + (mob?40:46)).attr('y', midY - 4)
+        .attr('dominant-baseline','auto')
+        .attr('fill','#334155')
+        .style('font-size', mob?'12px':'13px')
+        .style('font-weight','600')
+        .text(f.label);
+      g.append('text')
+        .attr('x', labelX + 6).attr('y', midY + (mob?14:16))
+        .attr('dominant-baseline','auto')
+        .attr('fill','#94A3B8')
+        .style('font-size', mob?'10px':'11px')
+        .text(f.count + ' documentos');
+    } else {
+      /* compact single line for small flows */
+      g.append('text')
+        .attr('x', labelX + 6 + (mob?26:30)).attr('y', midY + 1)
+        .attr('dominant-baseline','middle')
+        .attr('fill','#64748B')
+        .style('font-size', mob?'10px':'11px')
+        .style('font-weight','500')
+        .text(f.label + ' · ' + f.count);
+    }
+  });
 })();
 
 // 4. Monthly stacked by state
@@ -1138,6 +1363,31 @@ window.stateBus.on('select', function(estado){
   applyFilters();
   document.getElementById('mapaClearBtn').classList.toggle('visible', !!estado);
 });
+
+/* ── Storytelling: progressive reveal ── */
+(function(){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('revealed');
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:0.3});
+  document.querySelectorAll('.reveal-stage').forEach(function(el){io.observe(el);});
+
+  /* Scatter staged reveal — median lines + quadrant labels fade in */
+  var scatterObs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('scatter-revealed');
+        scatterObs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.3});
+  var scEl = document.getElementById('cross-scatter');
+  if(scEl) scatterObs.observe(scEl);
+})();
 </script>
 <script src="js/population.js"></script>
 <script src="js/map.js"></script>
