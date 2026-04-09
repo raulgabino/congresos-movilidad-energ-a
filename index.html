@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script src="data.js"></script>
+<script src="js/state-bus.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -66,8 +68,21 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-he
 .section-desc{font-size:14px;color:var(--text-muted);margin-top:6px}
 
 /* STATE CARDS */
-.state-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-bottom:48px}
-.state-card{background:#fff;border:1px solid var(--border-light);border-radius:3px;padding:24px;position:relative;overflow:hidden;transition:box-shadow .2s}
+.state-cards{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:#C9C3B0 transparent;padding:4px 4px 18px 4px;margin-bottom:36px;-webkit-overflow-scrolling:touch;scroll-padding-left:4px}
+.state-cards::-webkit-scrollbar{height:8px}
+.state-cards::-webkit-scrollbar-track{background:transparent}
+.state-cards::-webkit-scrollbar-thumb{background:#D8D3C4;border-radius:4px}
+.state-cards::-webkit-scrollbar-thumb:hover{background:#B8B19E}
+.state-cards-wrap{position:relative}
+.state-cards-wrap::before,.state-cards-wrap::after{content:'';position:absolute;top:0;bottom:18px;width:32px;pointer-events:none;z-index:2;transition:opacity .15s}
+.state-cards-wrap::before{left:0;background:linear-gradient(to right,var(--bg),transparent)}
+.state-cards-wrap::after{right:0;background:linear-gradient(to left,var(--bg),transparent)}
+.state-cards-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:18px;font-weight:600;transition:background .15s,transform .15s}
+.state-cards-arrow:hover{background:var(--bg-alt);transform:translateY(-50%) scale(1.05)}
+.state-cards-arrow.left{left:-6px}
+.state-cards-arrow.right{right:-6px}
+.state-card{flex:0 0 240px;min-width:240px;scroll-snap-align:start;background:#fff;border:1px solid var(--border-light);border-radius:3px;padding:22px;position:relative;overflow:hidden;transition:box-shadow .2s,transform .15s}
+.state-card:hover{transform:translateY(-2px)}
 .state-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .state-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
 .state-card-name{font-family:var(--font-title);font-size:18px;font-weight:700;margin-bottom:4px}
@@ -79,6 +94,36 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text);line-he
 .state-card-link:hover{color:var(--text)}
 .state-card-link svg{transition:transform .2s}
 .state-card-link:hover svg{transform:translateX(3px)}
+
+/* MAPA */
+.mapa-section{max-width:var(--max-w);margin:0 auto;padding:48px 24px 24px}
+.mapa-card{background:#fff;border:1px solid var(--border-light);border-radius:3px;padding:24px;position:relative}
+.mapa-svg-wrap{position:relative;width:100%;min-height:200px}
+.mapa-svg{display:block;width:100%;height:auto;cursor:default}
+.mapa-state{cursor:pointer;transition:opacity .15s,stroke-width .1s}
+.mapa-state.is-selected{stroke:#1A1A2E;stroke-width:1.6}
+.mapa-state.is-dim{opacity:.35}
+.mapa-tooltip{position:absolute;pointer-events:none;background:#1A1A2E;color:#fff;padding:10px 12px;border-radius:3px;font-size:12px;line-height:1.5;min-width:170px;box-shadow:0 6px 18px rgba(0,0,0,.18);transition:opacity .12s;z-index:5}
+.mapa-tt-name{font-family:var(--font-title);font-weight:700;font-size:13px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #2d2d44}
+.mapa-tt-row{display:flex;justify-content:space-between;gap:14px;font-size:11px}
+.mapa-tt-row strong{color:#fff;font-weight:600}
+.mapa-tt-row span{color:#9CA3AF}
+.mapa-tt-sub{margin-top:4px;padding-top:4px;border-top:1px solid #2d2d44}
+.mapa-tt-empty{font-size:11px;color:#9CA3AF;font-style:italic}
+.mapa-error{padding:32px;text-align:center;color:var(--text-muted);font-size:13px}
+.mapa-legend{margin-top:14px;padding-top:14px;border-top:1px solid var(--border-light)}
+.mapa-legend-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px}
+.mapa-mode-toggle{display:inline-flex;border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:10px;background:#fff}
+.mapa-mode-btn{padding:7px 14px;font-size:12px;font-weight:600;font-family:var(--font-body);background:#fff;color:var(--text-muted);border:none;cursor:pointer;transition:background .15s,color .15s;min-height:34px}
+.mapa-mode-btn:hover{background:var(--bg-alt)}
+.mapa-mode-btn.is-active{background:#9A4A00;color:#fff}
+.mapa-legend-bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.mapa-legend-stop{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.mapa-legend-stop .sw{display:inline-block;width:14px;height:14px;border-radius:2px;border:1px solid rgba(0,0,0,.06)}
+.mapa-legend-help{margin-top:8px;font-size:11px;color:var(--text-light);font-style:italic}
+.mapa-clear-btn{position:absolute;top:20px;right:20px;background:#fff;border:1px solid var(--border);border-radius:3px;padding:6px 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);cursor:pointer;display:none;font-family:var(--font-body)}
+.mapa-clear-btn.visible{display:inline-block}
+.mapa-clear-btn:hover{color:var(--text);border-color:var(--text)}
 
 /* CHARTS */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
@@ -163,18 +208,172 @@ footer a:hover{text-decoration:underline}
   .hero-stat-num{font-size:32px}
 }
 @media(max-width:680px){
+  body{font-size:14px}
+  .nav{padding:0 16px;height:52px}
+  .nav-brand{font-size:13px;max-width:62%}
   .nav-links{display:none}
-  .hamburger{display:block}
+  .hamburger{display:block;min-width:44px;min-height:44px}
+
+  .hero{padding:32px 16px 24px}
+  .hero h1{font-size:clamp(28px,8vw,40px);margin-bottom:12px}
+  .hero-subtitle{font-size:15px;margin-bottom:14px}
+  .hero-desc{font-size:13px;line-height:1.6}
+  .hero-aside{padding:20px;margin-top:8px}
+  .hero-stat-num{font-size:36px}
+  .hero-stat{margin-bottom:18px}
+
+  /* Indicadores: scroll horizontal para no apilar 22 estados */
+  .indicators-inner{display:flex;overflow-x:auto;gap:0;padding:14px 0;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .indicators-inner::-webkit-scrollbar{display:none}
+  .indicator{flex:0 0 92px;scroll-snap-align:start;padding:6px 10px}
+  .indicator-num{font-size:20px}
+  .indicator-label{font-size:9px}
+
+  .section{padding:32px 16px}
+  .section-title{font-size:20px}
+  .section-desc{font-size:13px}
+  .section-header{margin-bottom:20px}
+
+  /* MAPA mobile */
+  .mapa-section{padding:24px 12px 16px}
+  .mapa-card{padding:12px}
+  .mapa-clear-btn{top:10px;right:10px;padding:8px 12px;font-size:10px;min-height:36px}
+  .mapa-tooltip{font-size:11px;min-width:140px;padding:8px 10px}
+  .mapa-legend-bar{gap:10px}
+
+  /* Charts mobile */
+  .charts-grid{gap:16px}
+  .chart-card{padding:14px 12px}
+  .chart-title{font-size:15px}
+  .chart-subtitle{font-size:11px;margin-bottom:14px}
+
+  /* Tarjetas de estado: 1 col, padding reducido */
+  .state-cards{gap:10px;margin-bottom:24px;padding-bottom:14px}
+  .state-card{flex:0 0 200px;min-width:200px;padding:16px}
+  .state-cards-arrow{display:none}
+  .state-card-stat-num{font-size:20px}
+
+  /* Filtros */
   .filters-bar{display:none}
-  .filters-bar.open{display:flex;flex-direction:column;align-items:stretch}
-  .filter-toggle-btn{display:flex;align-items:center;gap:6px;margin-bottom:12px}
-  .filter-group{flex-direction:column;align-items:stretch}
+  .filters-bar.open{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+  .filter-toggle-btn{display:flex;align-items:center;gap:6px;margin-bottom:12px;min-height:44px;width:100%;justify-content:center}
+  .filter-group{flex-direction:column;align-items:stretch;gap:4px}
+  .filter-label{font-size:10px}
+  select.filter-select{min-height:40px;font-size:14px}
   .search-box{min-width:unset;width:100%}
+  .search-box input{min-height:40px;font-size:14px}
+
+  /* Tabla → tarjetas */
   .table-wrap{display:none}
   .cards-list{display:block}
-  .hero{padding:40px 16px 32px}
-  .section{padding:40px 16px}
-  .chart-card{padding:16px}
+
+  /* Modal en mobile = casi fullscreen */
+  .modal-overlay{padding:12px;align-items:flex-start}
+  .modal{padding:20px;max-height:calc(100vh - 24px);overflow-y:auto}
+  .modal h3{font-size:16px;padding-right:36px}
+  .modal-close{min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center}
+
+  /* Pagination touch-friendly */
+  .pagination button{min-height:40px;padding:8px 14px}
+}
+
+/* ─── TREEMAP DOCUMENTOS POR SUBTEMA ─── */
+.chart-wrap--treemap{height:auto !important}
+.treemap-wrap{position:relative;width:100%}
+.treemap-svg{display:block;width:100%;height:auto;font-family:inherit}
+.treemap-svg .tm-macro-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;pointer-events:none}
+.treemap-svg .tm-sub-lbl{font-size:10px;font-weight:600;pointer-events:none}
+.treemap-svg .tm-leaf-lbl{font-size:11px;font-weight:600;pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,0.25);stroke-width:2px;stroke-linejoin:round}
+.treemap-svg .tm-leaf-val{font-size:10px;font-weight:500;pointer-events:none;opacity:.9;paint-order:stroke;stroke:rgba(0,0,0,0.2);stroke-width:1.5px}
+.treemap-svg .tm-leaf{transition:fill-opacity .15s,stroke-width .15s}
+.treemap-svg .tm-leaf:hover{fill-opacity:1;stroke-width:2;stroke:#1A1A1A}
+.treemap-tt{position:absolute;z-index:10}
+@media (max-width:680px){
+  .treemap-svg .tm-macro-lbl{font-size:10px}
+  .treemap-svg .tm-sub-lbl{font-size:9px}
+  .treemap-svg .tm-leaf-lbl{font-size:10px}
+}
+
+/* ─── REGISTRO PANEL (lazy + fullscreen) ─── */
+.registro-panel{position:relative}
+.registro-panel-header{display:none}
+.registro-close{display:none}
+.table-preview-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:14px 16px;background:var(--bg-alt);border:1px dashed var(--border);border-radius:4px;font-size:13px;color:var(--text-muted);flex-wrap:wrap}
+.table-expand-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:var(--text);color:#fff;border:none;border-radius:3px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;min-height:40px}
+.table-expand-btn:hover{background:#000}
+.registro-panel.is-fullscreen .registro-panel-header{display:flex;justify-content:flex-end;padding:10px 16px;border-bottom:1px solid var(--border-light);background:#fff;position:sticky;top:0;z-index:5}
+.registro-panel.is-fullscreen .registro-close{display:flex;width:40px;height:40px;align-items:center;justify-content:center;background:none;border:1px solid var(--border);border-radius:50%;cursor:pointer;color:var(--text)}
+.registro-panel.is-fullscreen .registro-close:hover{background:var(--bg-alt)}
+.registro-panel.is-fullscreen .table-preview-footer{display:none}
+.registro-panel.is-fullscreen{position:fixed;inset:0;z-index:300;background:#fff;overflow-y:auto;padding:0 24px 24px 24px;-webkit-overflow-scrolling:touch}
+.registro-panel.is-fullscreen .pagination{display:flex !important}
+body.has-fullscreen-table{overflow:hidden}
+@media (max-width:680px){
+  .table-preview-footer{flex-direction:column;align-items:stretch;text-align:center}
+  .table-expand-btn{justify-content:center;width:100%}
+  .registro-panel.is-fullscreen{padding:0 12px 12px 12px}
+}
+
+/* ─── ROSLING SECTION ─── */
+.rosling-card{background:#fff;border:1px solid #E8E5DC;border-radius:14px;padding:18px 20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.rosling-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.rosling-controls{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.rosling-btn{width:40px;height:40px;border-radius:50%;border:1px solid #D8D3C4;background:#FAFAF7;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1A1A1A;transition:background .15s}
+.rosling-btn:hover{background:#F0EDE3}
+#rosling-slider{width:160px;accent-color:#9A4A00}
+.rosling-month{font-variant-numeric:tabular-nums;font-weight:600;font-size:14px;color:#5A5A5A;min-width:60px}
+.rosling-wrap{width:100%;position:relative}
+.rosling-svg{display:block;width:100%;height:auto;font-family:inherit}
+.rosling-svg .axis path,.rosling-svg .axis line{stroke:#E0DDD2;shape-rendering:crispEdges}
+.rosling-svg .axis text{font-size:11px;fill:#6B6B6B}
+.rosling-svg .axis-label{font-size:11px;fill:#6B6B6B;font-weight:500}
+.rosling-svg .bubble{cursor:pointer;transition:fill-opacity .15s}
+.rosling-svg .bubble:hover{fill-opacity:.85}
+.rosling-svg .bubble-lbl{font-size:11px;font-weight:600;fill:#1A1A1A;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.rosling-svg .rosling-year{font-size:38px;font-weight:700;fill:#E8DCC4;font-variant-numeric:tabular-nums}
+.rosling-svg .racing-year{font-size:24px}
+.rosling-svg .race-bar{cursor:pointer}
+.rosling-svg .race-name{font-size:12px;font-weight:600;fill:#1A1A1A}
+.rosling-svg .race-val{font-size:12px;font-weight:600;fill:#5A5A5A;font-variant-numeric:tabular-nums}
+.rosling-tt{position:absolute;background:#1A1A1A;color:#fff;padding:8px 11px;border-radius:8px;font-size:12px;pointer-events:none;transition:opacity .12s;box-shadow:0 4px 12px rgba(0,0,0,.18);min-width:140px;z-index:10}
+.rosling-tt strong{display:block;font-size:13px;margin-bottom:4px}
+.rosling-tt-row{display:flex;justify-content:space-between;gap:14px;font-variant-numeric:tabular-nums}
+.rosling-tt-row b{color:#FFD89B}
+.sm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.sm-card{background:#FAFAF7;border:1px solid #E8E5DC;border-radius:8px;padding:8px 10px;transition:transform .15s,box-shadow .15s}
+.sm-card:hover{transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.06)}
+.sm-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:8px}
+.sm-name{font-size:11px;font-weight:600;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sm-val{font-size:13px;font-weight:700;color:#9A4A00;font-variant-numeric:tabular-nums}
+.sm-svg{width:100%;height:48px;display:block}
+/* ── Cruces analíticos: scatter ── */
+.rosling-svg .quad-line{stroke:#9A4A00;stroke-dasharray:4 4;stroke-width:1;stroke-opacity:.5}
+.rosling-svg .quad-lbl{font-size:10px;font-weight:600;fill:#9A4A00;fill-opacity:.7;letter-spacing:.02em;text-transform:uppercase;pointer-events:none}
+.rosling-svg .scatter-lbl{font-size:10px;font-weight:600;fill:#1A1A1A;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.rosling-svg .scatter-pt circle{transition:r .15s,stroke-width .15s}
+.rosling-svg .scatter-pt:hover circle{stroke-width:2.5}
+/* ── Cruces analíticos: heatmap ── */
+.rosling-svg.heatmap-svg{font-size:11px}
+.rosling-svg .heat-row-lbl{font-size:11px;font-weight:600;fill:#1A1A1A}
+.rosling-svg .heat-col-lbl{font-size:10px;fill:#5A5A5A}
+.rosling-svg .heat-cell-val{font-size:10px;font-weight:600;pointer-events:none}
+.rosling-svg .heat-divider{stroke:#C9C3B0;stroke-width:1.5;stroke-dasharray:3 3}
+.rosling-svg .heat-group-lbl{font-size:11px;font-weight:700;letter-spacing:.08em}
+.rosling-svg .heat-cell{transition:stroke .12s}
+.rosling-svg .heat-cell:hover{stroke:#1A1A1A;stroke-width:1.5}
+@media (max-width:680px){
+  .rosling-svg .quad-lbl{font-size:8px}
+  .rosling-svg .scatter-lbl{font-size:9px}
+  .rosling-svg .heat-row-lbl{font-size:9px}
+  .rosling-svg .heat-col-lbl{font-size:8px}
+}
+@media (max-width:680px){
+  .rosling-card{padding:14px 12px}
+  .rosling-head{gap:10px}
+  #rosling-slider{width:110px}
+  .rosling-svg .rosling-year{font-size:24px}
+  .rosling-svg .racing-year{font-size:18px}
+  .sm-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 }
 </style>
 </head>
@@ -184,8 +383,11 @@ footer a:hover{text-decoration:underline}
 <nav class="nav">
   <span class="nav-brand">Observatorio Legislativo Estatal</span>
   <ul class="nav-links">
+    <li><a href="#mapa">Mapa</a></li>
     <li><a href="#estados">Estados</a></li>
     <li><a href="#comparativo">Comparativo</a></li>
+    <li><a href="#evolucion">Evolución</a></li>
+    <li><a href="#cruces">Cruces</a></li>
     <li><a href="#registro">Registro</a></li>
   </ul>
   <button class="hamburger" onclick="document.querySelector('.mobile-menu').classList.toggle('open')" aria-label="Menú">
@@ -198,10 +400,10 @@ footer a:hover{text-decoration:underline}
 <section class="hero">
   <div class="hero-grid">
     <div>
-      <span class="hero-tag">Análisis comparativo</span>
+      <span class="hero-tag">Análisis comparativo · Datos desde octubre 2024</span>
       <h1>Observatorio Legislativo<br><span>Estatal</span></h1>
       <p class="hero-subtitle">Energía y Movilidad</p>
-      <p class="hero-desc">Registro comparativo de la actividad legislativa de congresos estatales de México en materia de energía y movilidad. Taxonomía homogénea para análisis transversal entre estados.</p>
+      <p class="hero-desc">Registro comparativo de la actividad legislativa de congresos estatales de México en materia de energía y movilidad. La ventana de análisis está estandarizada a partir del <strong>1 de octubre de 2024</strong> (inicio del sexenio federal) para garantizar comparabilidad entre estados. Taxonomía homogénea para análisis transversal.</p>
     </div>
     <div class="hero-aside">
       <div class="hero-stat">
@@ -225,13 +427,30 @@ footer a:hover{text-decoration:underline}
   <div class="indicators-inner" id="indicatorsBar"></div>
 </section>
 
+<!-- MAPA DE MÉXICO -->
+<section class="mapa-section" id="mapa">
+  <div class="section-header">
+    <h2 class="section-title">Mapa de actividad legislativa</h2>
+    <p class="section-desc">Intensidad de color según número de documentos. Haz clic en un estado para filtrar el dashboard.</p>
+  </div>
+  <div class="mapa-card">
+    <button class="mapa-clear-btn" id="mapaClearBtn" type="button" onclick="window.stateBus.emit('select', null)">× Limpiar selección</button>
+    <div class="mapa-svg-wrap" id="mapa-svg-wrap"></div>
+    <div class="mapa-legend" id="mapa-legend"></div>
+  </div>
+</section>
+
 <!-- STATE CARDS -->
 <section class="section" id="estados">
   <div class="section-header">
     <h2 class="section-title">Estados analizados</h2>
     <p class="section-desc">Accede al detalle de cada congreso estatal</p>
   </div>
-  <div class="state-cards" id="stateCards"></div>
+  <div class="state-cards-wrap">
+    <button type="button" class="state-cards-arrow left" id="stateCardsLeft" aria-label="Anterior">‹</button>
+    <div class="state-cards" id="stateCards"></div>
+    <button type="button" class="state-cards-arrow right" id="stateCardsRight" aria-label="Siguiente">›</button>
+  </div>
 </section>
 
 <!-- COMPARATIVE CHARTS -->
@@ -243,8 +462,8 @@ footer a:hover{text-decoration:underline}
   <div class="charts-grid">
     <div class="chart-card chart-card--full">
       <div class="chart-title">Documentos por subtema</div>
-      <div class="chart-subtitle">Comparación directa entre estados — barras agrupadas</div>
-      <div class="chart-wrap"><canvas id="chartSubtema"></canvas></div>
+      <div class="chart-subtitle">Treemap jerárquico · Macrotema → Subtema → Estado · tamaño = número de documentos · clic en un estado filtra el dashboard</div>
+      <div class="chart-wrap chart-wrap--treemap"><div id="treemapSubtema" class="treemap-wrap"></div></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Proporción Energía / Movilidad</div>
@@ -264,11 +483,92 @@ footer a:hover{text-decoration:underline}
   </div>
 </section>
 
+<!-- EVOLUCIÓN TIPO ROSLING -->
+<section class="section" id="evolucion">
+  <div class="section-header">
+    <h2 class="section-title">Evolución temporal</h2>
+    <p class="section-desc">Cómo cambia la actividad legislativa mes a mes desde octubre 2024</p>
+  </div>
+
+  <div class="rosling-card">
+    <div class="rosling-head">
+      <div>
+        <div class="chart-title">Trayectoria Energía vs Movilidad</div>
+        <div class="chart-subtitle">Cada burbuja es un estado · X = iniciativas de Energía · Y = iniciativas de Movilidad · tamaño = total · color = % aprobado</div>
+      </div>
+      <div class="rosling-controls">
+        <button type="button" id="rosling-play" class="rosling-btn" aria-label="Reproducir">▶</button>
+        <input type="range" id="rosling-slider" min="0" max="0" step="1" value="0" />
+        <span id="rosling-month-label" class="rosling-month"></span>
+      </div>
+    </div>
+    <div id="rosling-bubble" class="rosling-wrap"></div>
+  </div>
+
+  <div class="rosling-card">
+    <div class="rosling-head">
+      <div>
+        <div class="chart-title">Carrera de estados — Top 10 acumulado</div>
+        <div class="chart-subtitle">Ranking dinámico de los estados con mayor actividad acumulada</div>
+      </div>
+      <div class="rosling-controls">
+        <button type="button" id="racing-play" class="rosling-btn" aria-label="Reproducir">▶</button>
+      </div>
+    </div>
+    <div id="rosling-racing" class="rosling-wrap"></div>
+  </div>
+
+  <div class="rosling-card">
+    <div class="rosling-head">
+      <div>
+        <div class="chart-title">Trayectoria por estado</div>
+        <div class="chart-subtitle">Mini gráficas comparables · clic en una tarjeta para filtrar el resto del dashboard</div>
+      </div>
+    </div>
+    <div id="rosling-multiples" class="sm-grid"></div>
+  </div>
+</section>
+
+<!-- CRUCES ANALÍTICOS -->
+<section class="section" id="cruces">
+  <div class="section-header">
+    <h2 class="section-title">Cruces analíticos</h2>
+    <p class="section-desc">Lecturas que combinan dimensiones para revelar patrones que los totales no muestran</p>
+  </div>
+
+  <div class="rosling-card">
+    <div class="rosling-head">
+      <div>
+        <div class="chart-title">Volumen vs efectividad legislativa</div>
+        <div class="chart-subtitle">Eje X = total de documentos · Eje Y = % aprobados · líneas de mediana dividen en cuadrantes. Identifica "campeones", "quirúrgicos" y "prolíficos".</div>
+      </div>
+    </div>
+    <div id="cross-scatter" class="rosling-wrap"></div>
+  </div>
+
+  <div class="rosling-card">
+    <div class="rosling-head">
+      <div>
+        <div class="chart-title">Mapa de calor: Estado × Subtema</div>
+        <div class="chart-subtitle">Concentración temática por estado · escalas separadas para Energía (naranjas) y Movilidad (verdes). Clic en una celda filtra el dashboard al estado.</div>
+      </div>
+    </div>
+    <div id="cross-heatmap" class="rosling-wrap"></div>
+  </div>
+</section>
+
 <!-- UNIFIED TABLE -->
 <section class="section" id="registro">
   <div class="section-header">
     <h2 class="section-title">Registro unificado</h2>
     <p class="section-desc" id="tableSubtitle"></p>
+  </div>
+
+  <div class="registro-panel" id="registroPanel">
+  <div class="registro-panel-header">
+    <button type="button" class="registro-close" id="registroClose" aria-label="Cerrar tabla completa">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
   </div>
 
   <button class="filter-toggle-btn" onclick="document.querySelector('.filters-bar').classList.toggle('open')">
@@ -317,6 +617,14 @@ footer a:hover{text-decoration:underline}
   </div>
   <div class="cards-list" id="cardsList"></div>
   <div class="pagination" id="pagination"></div>
+  <div class="table-preview-footer" id="tablePreviewFooter">
+    <span id="tablePreviewInfo"></span>
+    <button type="button" class="table-expand-btn" id="tableExpandBtn">
+      Ver tabla completa
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 9v5h5M14 7V2H9M2 14L7 9M14 2L9 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  </div><!-- /.registro-panel -->
 </section>
 
 <!-- MODAL -->
@@ -337,11 +645,13 @@ function stateColorLight(name){return ESTADOS[name]?ESTADOS[name].color_light:'#
 function stateColorDark(name){return ESTADOS[name]?ESTADOS[name].color_dark:'#374151'}
 function macroBadge(m){return m==='Energía'?'badge-energia':'badge-movilidad'}
 
-const totalDocs=DATA_ALL.length;
+/* Toda la app trabaja sobre DATA_FILTERED (ventana desde FECHA_INICIO).
+   DATA_ALL se conserva intacto en data.js para auditoría/historia. */
+const totalDocs=DATA_FILTERED.length;
 const numEstados=ESTADO_NAMES.length;
-const totalEnergia=DATA_ALL.filter(d=>d.macrotema==='Energía').length;
-const totalMovilidad=DATA_ALL.filter(d=>d.macrotema==='Movilidad').length;
-const totalAprobados=DATA_ALL.filter(d=>estatusH(d.estatus)==='Aprobado').length;
+const totalEnergia=DATA_FILTERED.filter(d=>d.macrotema==='Energía').length;
+const totalMovilidad=DATA_FILTERED.filter(d=>d.macrotema==='Movilidad').length;
+const totalAprobados=DATA_FILTERED.filter(d=>estatusH(d.estatus)==='Aprobado').length;
 
 /* ── DYNAMIC NAV ── */
 (function(){
@@ -365,7 +675,7 @@ document.getElementById('tableSubtitle').textContent='Explora los '+totalDocs+' 
   const bar=document.getElementById('indicatorsBar');
   let html=`<div class="indicator"><div class="indicator-num">${totalDocs}</div><div class="indicator-label">Total</div></div>`;
   ESTADO_NAMES.forEach(n=>{
-    const cnt=DATA_ALL.filter(d=>d.estado===n).length;
+    const cnt=STATE_METRICS[n].total;
     html+=`<div class="indicator"><div class="indicator-num" style="color:${stateColor(n)}">${cnt}</div><div class="indicator-label">${n}</div></div>`;
   });
   html+=`<div class="indicator"><div class="indicator-num" style="color:var(--energia)">${totalEnergia}</div><div class="indicator-label">Energía</div></div>`;
@@ -378,21 +688,28 @@ document.getElementById('tableSubtitle').textContent='Explora los '+totalDocs+' 
   const container=document.getElementById('stateCards');
   ESTADO_NAMES.forEach(name=>{
     const meta=ESTADOS[name];
-    const data=DATA_ALL.filter(d=>d.estado===name);
-    const ene=data.filter(d=>d.macrotema==='Energía').length;
-    const mov=data.filter(d=>d.macrotema==='Movilidad').length;
+    const sm=STATE_METRICS[name];
+    const ene=sm.energia, mov=sm.movilidad, totalEstado=sm.total;
     container.innerHTML+=`
       <div class="state-card" style="--sc:${meta.color}">
         <style>.state-card[style*="${meta.color}"]::before{background:${meta.color}}</style>
         <div class="state-card-name">${name}</div>
         <div class="state-card-leg">${meta.legislatura} · ${meta.periodo} · ${meta.periodo_datos}</div>
         <div class="state-card-stats">
-          <div><div class="state-card-stat-num">${data.length}</div><div class="state-card-stat-label">Documentos</div></div>
+          <div><div class="state-card-stat-num">${totalEstado}</div><div class="state-card-stat-label">Documentos</div></div>
           <div><div class="state-card-stat-num" style="color:var(--energia)">${ene}</div><div class="state-card-stat-label">Energía</div></div>
           <div><div class="state-card-stat-num" style="color:var(--movilidad)">${mov}</div><div class="state-card-stat-label">Movilidad</div></div>
         </div>
         <a href="${meta.slug}/" class="state-card-link">Ver detalle completo <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
       </div>`;
+  });
+  /* Arrows del carrusel */
+  const SCROLL_STEP = 254; // ancho card 240 + gap 14
+  document.getElementById('stateCardsLeft').addEventListener('click', () => {
+    container.scrollBy({ left: -SCROLL_STEP * 2, behavior: 'smooth' });
+  });
+  document.getElementById('stateCardsRight').addEventListener('click', () => {
+    container.scrollBy({ left: SCROLL_STEP * 2, behavior: 'smooth' });
   });
 })();
 
@@ -414,63 +731,226 @@ Chart.defaults.font.size=12;
 Chart.defaults.color='#6B7280';
 Chart.defaults.plugins.legend.display=false;
 
+const isMobile = () => window.matchMedia('(max-width: 680px)').matches;
+/* Mapeo de nombres de estado a etiquetas cortas para mobile */
+const SHORT_LABELS = {'Tamaulipas':'TAM','Nuevo León':'NL','Coahuila':'COA','Chihuahua':'CHIH','Sonora':'SON','Veracruz':'VER','Chiapas':'CHIS','Jalisco':'JAL','Estado de México':'EDOMEX','Colima':'COL','Durango':'DGO','Michoacán':'MICH','Puebla':'PUE','Querétaro':'QRO','Campeche':'CAM','Sinaloa':'SIN','Oaxaca':'OAX','Tlaxcala':'TLX','CDMX':'CDMX','Zacatecas':'ZAC','Morelos':'MOR','Guerrero':'GRO','Nayarit':'NAY','Tabasco':'TAB','Guanajuato':'GTO','Aguascalientes':'AGS','Quintana Roo':'QROO'};
+const stateLabels = () => isMobile() ? ESTADO_NAMES.map(n=>SHORT_LABELS[n]||n) : ESTADO_NAMES;
+
 const stateColors=ESTADO_NAMES.map(n=>stateColor(n));
 
-// 1. Subtema grouped bar (full width)
+// 1. Subtema TREEMAP jerárquico (Macrotema → Subtema → Estado)
 (function(){
-  const allCodes=Object.keys(SUBTEMAS);
-  const countsByState={};
-  ESTADO_NAMES.forEach(n=>{countsByState[n]={};DATA_ALL.filter(d=>d.estado===n).forEach(d=>{countsByState[n][d.subtema]=(countsByState[n][d.subtema]||0)+1})});
-  const totals=allCodes.map(k=>ESTADO_NAMES.reduce((s,n)=>(s+(countsByState[n][k]||0)),0));
-  const sorted=allCodes.map((k,i)=>({code:k,total:totals[i]})).sort((a,b)=>b.total-a.total);
-  const labels=sorted.map(s=>SUBTEMAS[s.code]);
-  const datasets=ESTADO_NAMES.map((n,i)=>({
-    label:n,data:sorted.map(s=>countsByState[n][s.code]||0),backgroundColor:stateColors[i],borderRadius:2,barPercentage:0.85,categoryPercentage:0.75
-  }));
-  new Chart(document.getElementById('chartSubtema'),{
-    type:'bar',data:{labels,datasets},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
-        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.raw}}},
-      scales:{x:{grid:{color:'#F0EFE9'},ticks:{stepSize:10}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  if (typeof d3 === 'undefined') return;
+  const wrap = document.getElementById('treemapSubtema');
+  if (!wrap) return;
+
+  // Construir jerarquía: Macrotema → Subtema → Estado
+  const counts = {}; // counts[macro][subCode][estado] = n
+  DATA_FILTERED.forEach(d => {
+    if (!counts[d.macrotema]) counts[d.macrotema] = {};
+    if (!counts[d.macrotema][d.subtema]) counts[d.macrotema][d.subtema] = {};
+    counts[d.macrotema][d.subtema][d.estado] = (counts[d.macrotema][d.subtema][d.estado] || 0) + 1;
   });
-  document.getElementById('chartSubtema').parentElement.style.height='480px';
+
+  function buildHierarchy() {
+    return {
+      name: 'root',
+      children: ['Energía','Movilidad'].filter(m => counts[m]).map(macro => ({
+        name: macro,
+        macro: macro,
+        children: Object.keys(counts[macro]).map(subCode => ({
+          name: SUBTEMAS[subCode] || subCode,
+          subCode: subCode,
+          macro: macro,
+          children: Object.keys(counts[macro][subCode]).map(estado => ({
+            name: estado,
+            estado: estado,
+            macro: macro,
+            subCode: subCode,
+            value: counts[macro][subCode][estado]
+          }))
+        }))
+      }))
+    };
+  }
+
+  // Tooltip flotante reutilizable
+  let tt = wrap.querySelector('.treemap-tt');
+  if (!tt) {
+    tt = document.createElement('div');
+    tt.className = 'rosling-tt treemap-tt';
+    tt.style.opacity = '0';
+    wrap.appendChild(tt);
+  }
+  function showTip(evt, html) {
+    tt.innerHTML = html;
+    tt.style.opacity = '1';
+    const r = wrap.getBoundingClientRect();
+    let x = evt.clientX - r.left + 12;
+    let y = evt.clientY - r.top + 12;
+    if (x + tt.offsetWidth > r.width) x = evt.clientX - r.left - tt.offsetWidth - 12;
+    if (y + tt.offsetHeight > r.height) y = evt.clientY - r.top - tt.offsetHeight - 12;
+    tt.style.left = Math.max(4, x) + 'px';
+    tt.style.top = Math.max(4, y) + 'px';
+  }
+  function hideTip() { tt.style.opacity = '0'; }
+
+  function renderTreemap() {
+    const width = wrap.clientWidth;
+    const height = isMobile() ? 520 : 560;
+
+    // Limpia svg previo (mantiene el tooltip)
+    wrap.querySelectorAll('svg').forEach(s => s.remove());
+
+    const svg = d3.select(wrap).append('svg')
+      .attr('class', 'treemap-svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('width', '100%')
+      .attr('height', height);
+
+    const root = d3.hierarchy(buildHierarchy())
+      .sum(d => d.value || 0)
+      .sort((a, b) => b.value - a.value);
+
+    d3.treemap()
+      .size([width, height])
+      .paddingOuter(4)
+      .paddingTop(d => d.depth === 1 ? 22 : (d.depth === 2 ? 18 : 0))
+      .paddingInner(2)
+      .round(true)(root);
+
+    // 1. Macrotema (depth 1) — solo borde + título
+    const macroNodes = root.descendants().filter(d => d.depth === 1);
+    const gMacro = svg.append('g').selectAll('g').data(macroNodes).enter().append('g')
+      .attr('transform', d => `translate(${d.x0},${d.y0})`);
+    gMacro.append('rect')
+      .attr('width', d => d.x1 - d.x0)
+      .attr('height', d => d.y1 - d.y0)
+      .attr('fill', 'none')
+      .attr('stroke', d => d.data.macro === 'Energía' ? '#E8960A' : '#2E7D32')
+      .attr('stroke-width', 1.5)
+      .attr('rx', 4);
+    gMacro.append('text')
+      .attr('class', 'tm-macro-lbl')
+      .attr('x', 8).attr('y', 15)
+      .attr('fill', d => d.data.macro === 'Energía' ? '#9A4A00' : '#1F5C24')
+      .text(d => `${d.data.macro.toUpperCase()} · ${d.value}`);
+
+    // 2. Subtema (depth 2) — banda con label
+    const subNodes = root.descendants().filter(d => d.depth === 2);
+    const gSub = svg.append('g').selectAll('g').data(subNodes).enter().append('g')
+      .attr('transform', d => `translate(${d.x0},${d.y0})`);
+    gSub.append('rect')
+      .attr('width', d => d.x1 - d.x0)
+      .attr('height', d => d.y1 - d.y0)
+      .attr('fill', d => d.data.macro === 'Energía' ? 'rgba(232,150,10,0.06)' : 'rgba(46,125,50,0.06)')
+      .attr('stroke', d => d.data.macro === 'Energía' ? 'rgba(232,150,10,0.35)' : 'rgba(46,125,50,0.35)')
+      .attr('stroke-width', 1)
+      .attr('rx', 3);
+    gSub.append('text')
+      .attr('class', 'tm-sub-lbl')
+      .attr('x', 6).attr('y', 13)
+      .attr('fill', d => d.data.macro === 'Energía' ? '#9A4A00' : '#1F5C24')
+      .text(d => {
+        const w = d.x1 - d.x0;
+        const maxChars = Math.floor((w - 12) / 6.2);
+        const lbl = `${d.data.name} · ${d.value}`;
+        return maxChars < 4 ? '' : (lbl.length > maxChars ? lbl.slice(0, maxChars - 1) + '…' : lbl);
+      });
+
+    // 3. Estados (leaves) — celdas coloreadas con interacción
+    const leaves = root.leaves();
+    const gLeaf = svg.append('g').selectAll('g').data(leaves).enter().append('g')
+      .attr('transform', d => `translate(${d.x0},${d.y0})`)
+      .style('cursor', 'pointer')
+      .on('mousemove', function (evt, d) {
+        const subName = SUBTEMAS[d.data.subCode] || d.data.subCode;
+        const stateTotal = (STATE_METRICS[d.data.estado] && STATE_METRICS[d.data.estado].total) || 0;
+        const pct = stateTotal ? Math.round(d.value / stateTotal * 100) : 0;
+        showTip(evt, `<strong>${d.data.estado}</strong>
+          <div class="rosling-tt-row"><span>${subName}</span><b>${d.value}</b></div>
+          <div class="rosling-tt-row"><span>${d.data.macro}</span><b>—</b></div>
+          <div class="rosling-tt-row"><span>% del estado</span><b>${pct}%</b></div>`);
+      })
+      .on('mouseleave', hideTip)
+      .on('click', function (evt, d) {
+        window.stateBus && window.stateBus.emit('select', d.data.estado);
+      });
+    gLeaf.append('rect')
+      .attr('class', 'tm-leaf')
+      .attr('width', d => Math.max(0, d.x1 - d.x0))
+      .attr('height', d => Math.max(0, d.y1 - d.y0))
+      .attr('fill', d => stateColor(d.data.estado))
+      .attr('fill-opacity', 0.85)
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 0.8)
+      .attr('rx', 2);
+    gLeaf.append('text')
+      .attr('class', 'tm-leaf-lbl')
+      .attr('x', 5).attr('y', 13)
+      .attr('fill', '#fff')
+      .text(d => {
+        const w = d.x1 - d.x0, h = d.y1 - d.y0;
+        if (w < 36 || h < 18) return '';
+        const lbl = SHORT_LABELS[d.data.estado] || d.data.estado;
+        const maxChars = Math.floor((w - 8) / 6.5);
+        return lbl.length > maxChars ? lbl.slice(0, maxChars) : lbl;
+      });
+    gLeaf.append('text')
+      .attr('class', 'tm-leaf-val')
+      .attr('x', 5).attr('y', 26)
+      .attr('fill', '#fff')
+      .text(d => {
+        const w = d.x1 - d.x0, h = d.y1 - d.y0;
+        if (w < 36 || h < 32) return '';
+        return d.value;
+      });
+  }
+
+  renderTreemap();
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderTreemap, 150);
+  });
 })();
 
 // 2. Macrotema stacked
 (function(){
   const datasets=[
-    {label:'Energía',data:ESTADO_NAMES.map(n=>DATA_ALL.filter(d=>d.estado===n&&d.macrotema==='Energía').length),backgroundColor:'#E8960A',borderRadius:2},
-    {label:'Movilidad',data:ESTADO_NAMES.map(n=>DATA_ALL.filter(d=>d.estado===n&&d.macrotema==='Movilidad').length),backgroundColor:'#2E7D32',borderRadius:2}
+    {label:'Energía',data:ESTADO_NAMES.map(n=>STATE_METRICS[n].energia),backgroundColor:'#E8960A',borderRadius:2},
+    {label:'Movilidad',data:ESTADO_NAMES.map(n=>STATE_METRICS[n].movilidad),backgroundColor:'#2E7D32',borderRadius:2}
   ];
   new Chart(document.getElementById('chartMacro'),{
-    type:'bar',data:{labels:ESTADO_NAMES,datasets},
-    options:{responsive:true,
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:16}},
-        tooltip:{callbacks:{label:ctx=>{const t=DATA_ALL.filter(d=>d.estado===ESTADO_NAMES[ctx.dataIndex]).length;return ctx.dataset.label+': '+ctx.raw+' ('+Math.round(ctx.raw/t*100)+'%)';}}}},
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#F0EFE9'}}}}
+    type:'bar',data:{labels:stateLabels(),datasets},
+    options:{responsive:true,maintainAspectRatio:!isMobile(),indexAxis:isMobile()?'y':'x',
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:16,font:{size:isMobile()?10:12}}},
+        tooltip:{callbacks:{label:ctx=>{const t=STATE_METRICS[ESTADO_NAMES[ctx.dataIndex]].total;return ctx.dataset.label+': '+ctx.raw+(t?' ('+Math.round(ctx.raw/t*100)+'%)':'');}}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:isMobile()?9:11}}},y:{stacked:true,grid:{color:'#F0EFE9'},ticks:{font:{size:isMobile()?9:11}}}}}
   });
+  if(isMobile())document.getElementById('chartMacro').parentElement.style.height='380px';
 })();
 
 // 3. Estatus homologado grouped
 (function(){
   const cats=['En proceso','Aprobado','Archivado','Atendido'];
   const datasets=ESTADO_NAMES.map((n,i)=>({
-    label:n,data:cats.map(c=>DATA_ALL.filter(d=>d.estado===n&&estatusH(d.estatus)===c).length),backgroundColor:stateColors[i],borderRadius:2
+    label:n,data:cats.map(c=>DATA_FILTERED.filter(d=>d.estado===n&&estatusH(d.estatus)===c).length),backgroundColor:stateColors[i],borderRadius:2
   }));
   new Chart(document.getElementById('chartEstatus'),{
     type:'bar',data:{labels:cats,datasets},
-    options:{responsive:true,
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
+    options:{responsive:true,maintainAspectRatio:!isMobile(),
+      plugins:{legend:{display:!isMobile(),position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
         tooltip:{mode:'index',intersect:false}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:'#F0EFE9'},ticks:{stepSize:10}}}}
+      scales:{x:{grid:{display:false},ticks:{font:{size:isMobile()?10:12}}},y:{grid:{color:'#F0EFE9'},ticks:{stepSize:isMobile()?20:10,font:{size:isMobile()?9:11}}}}}
   });
+  if(isMobile())document.getElementById('chartEstatus').parentElement.style.height='280px';
 })();
 
 // 4. Monthly stacked by state
 (function(){
   const months={};
-  DATA_ALL.forEach(d=>{
+  DATA_FILTERED.forEach(d=>{
     const ym=d.fecha.substring(0,7);
     if(!months[ym])months[ym]={};
     if(!months[ym][d.estado])months[ym][d.estado]=0;
@@ -481,18 +961,26 @@ const stateColors=ESTADO_NAMES.map(n=>stateColor(n));
   const datasets=ESTADO_NAMES.map((n,i)=>({
     label:n,data:sorted.map(k=>(months[k]&&months[k][n])||0),backgroundColor:stateColors[i],borderRadius:2
   }));
+  /* En mobile: simplificamos a un único dataset agregado por mes para legibilidad */
+  const mobileDataset = [{
+    label:'Documentos por mes', backgroundColor:'#1A1A2E', borderRadius:2,
+    data: sorted.map(k => Object.values(months[k]||{}).reduce((a,b)=>a+b,0))
+  }];
   new Chart(document.getElementById('chartMensual'),{
-    type:'bar',data:{labels,datasets},
-    options:{responsive:true,
-      plugins:{legend:{display:true,position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
+    type:'bar',data:{labels,datasets: isMobile() ? mobileDataset : datasets},
+    options:{responsive:true,maintainAspectRatio:!isMobile(),
+      plugins:{legend:{display:!isMobile(),position:'top',align:'end',labels:{usePointStyle:true,pointStyle:'circle',padding:12,font:{size:11}}},
         tooltip:{mode:'index',intersect:false}},
-      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:'#F0EFE9'},ticks:{stepSize:5}}}}
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:isMobile()?9:11},maxRotation:isMobile()?60:0}},
+        y:{stacked:true,grid:{color:'#F0EFE9'},ticks:{stepSize:isMobile()?10:5,font:{size:isMobile()?9:11}}}}}
   });
+  if(isMobile())document.getElementById('chartMensual').parentElement.style.height='260px';
 })();
 
 /* ── TABLE & FILTERS ── */
-let currentPage=1;const perPage=20;
-let filtered=[...DATA_ALL];
+let currentPage=1;const perPage=20;const PREVIEW_ROWS=5;
+let tablePreviewMode=true;
+let filtered=[...DATA_FILTERED];
 
 function applyFilters(){
   const estado=document.getElementById('filterEstado').value;
@@ -500,7 +988,7 @@ function applyFilters(){
   const sub=document.getElementById('filterSubtema').value;
   const est=document.getElementById('filterEstatus').value;
   const q=document.getElementById('searchInput').value.toLowerCase().trim();
-  filtered=DATA_ALL.filter(d=>{
+  filtered=DATA_FILTERED.filter(d=>{
     if(estado&&d.estado!==estado)return false;
     if(macro&&d.macrotema!==macro)return false;
     if(sub&&d.subtema!==sub)return false;
@@ -512,10 +1000,22 @@ function applyFilters(){
 }
 
 function render(){
-  const start=(currentPage-1)*perPage;
-  const page=filtered.slice(start,start+perPage);
+  const isPreview = tablePreviewMode;
+  const pageSize = isPreview ? PREVIEW_ROWS : perPage;
+  const start=isPreview ? 0 : (currentPage-1)*pageSize;
+  const page=filtered.slice(start,start+pageSize);
   const totalPages=Math.ceil(filtered.length/perPage)||1;
-  document.getElementById('resultsCount').innerHTML=`Mostrando <strong>${filtered.length}</strong> de ${DATA_ALL.length} documentos`;
+  document.getElementById('resultsCount').innerHTML=`Mostrando <strong>${filtered.length}</strong> de ${DATA_FILTERED.length} documentos`;
+  // Footer del modo preview
+  const footer=document.getElementById('tablePreviewFooter');
+  const info=document.getElementById('tablePreviewInfo');
+  if(isPreview){
+    footer.style.display='';
+    const shown=Math.min(PREVIEW_ROWS, filtered.length);
+    info.innerHTML=`Mostrando <strong>${shown}</strong> de <strong>${filtered.length}</strong> registros · expande para ver todos con paginación y filtros completos`;
+  } else {
+    footer.style.display='none';
+  }
 
   const tbody=document.getElementById('tableBody');
   tbody.innerHTML=page.map(d=>`
@@ -547,11 +1047,41 @@ function render(){
       </div>
     </div>`).join('');
 
-  document.getElementById('pagination').innerHTML=`
-    <button onclick="currentPage--;render()" ${currentPage<=1?'disabled':''}>← Anterior</button>
-    <span class="page-info">Página ${currentPage} de ${totalPages}</span>
-    <button onclick="currentPage++;render()" ${currentPage>=totalPages?'disabled':''}>Siguiente →</button>`;
+  const pag=document.getElementById('pagination');
+  if(isPreview){
+    pag.innerHTML='';
+  } else {
+    pag.innerHTML=`
+      <button onclick="currentPage--;render()" ${currentPage<=1?'disabled':''}>← Anterior</button>
+      <span class="page-info">Página ${currentPage} de ${totalPages}</span>
+      <button onclick="currentPage++;render()" ${currentPage>=totalPages?'disabled':''}>Siguiente →</button>`;
+  }
 }
+
+/* ── REGISTRO FULLSCREEN TOGGLE ── */
+function openFullTable(){
+  tablePreviewMode=false;
+  document.getElementById('registroPanel').classList.add('is-fullscreen');
+  document.body.classList.add('has-fullscreen-table');
+  currentPage=1;
+  render();
+  setTimeout(() => {
+    const panel=document.getElementById('registroPanel');
+    if(panel.scrollTop!==undefined) panel.scrollTop=0;
+  }, 0);
+}
+function closeFullTable(){
+  tablePreviewMode=true;
+  document.getElementById('registroPanel').classList.remove('is-fullscreen');
+  document.body.classList.remove('has-fullscreen-table');
+  currentPage=1;
+  render();
+}
+document.getElementById('tableExpandBtn').addEventListener('click', openFullTable);
+document.getElementById('registroClose').addEventListener('click', closeFullTable);
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape' && document.getElementById('registroPanel').classList.contains('is-fullscreen')) closeFullTable();
+});
 
 ['filterEstado','filterMacro','filterSubtema','filterEstatus'].forEach(id=>{
   document.getElementById(id).addEventListener('change',applyFilters);
@@ -560,7 +1090,7 @@ document.getElementById('searchInput').addEventListener('input',applyFilters);
 
 /* ── MODAL ── */
 function openModal(id){
-  const d=DATA_ALL.find(r=>r.id===id);if(!d)return;
+  const d=DATA_FILTERED.find(r=>r.id===id);if(!d)return;
   document.getElementById('modalContent').innerHTML=`
     <button class="modal-close" onclick="closeModal()" aria-label="Cerrar">
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -589,10 +1119,30 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 /* ── FOOTER ── */
 (function(){
   const links=ESTADO_NAMES.map(n=>`<a href="${ESTADOS[n].portal_url}" target="_blank" rel="noopener">${ESTADOS[n].portal}</a>`).join(' · ');
-  document.getElementById('footerContent').innerHTML=`Observatorio Legislativo Estatal · ${ESTADO_NAMES.join(', ')}<br>Datos públicos de los congresos estatales · ${links}<br>Contenido bajo licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>`;
+  document.getElementById('footerContent').innerHTML=`
+    <div style="max-width:760px;margin:0 auto 16px;padding:14px 20px;background:var(--bg-alt);border-left:3px solid var(--energia);text-align:left;font-size:12px;color:var(--text-muted);line-height:1.6;border-radius:2px">
+      <strong style="color:var(--text);font-family:var(--font-title);font-size:11px;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Nota metodológica</strong>
+      La ventana de análisis está estandarizada desde el <strong>1 de octubre de 2024</strong> (inicio del sexenio federal) para garantizar comparabilidad entre estados. La ausencia de registros para un estado en este período <em>no implica</em> inactividad legislativa: puede reflejar que el observatorio aún está incorporando información de ese congreso, o simplemente que no hubo iniciativas relevantes en los temas monitoreados. Este registro se enriquece progresivamente.
+    </div>
+    Observatorio Legislativo Estatal · ${ESTADO_NAMES.join(', ')}<br>Datos públicos de los congresos estatales · ${links}<br>Contenido bajo licencia <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>`;
 })();
 
 applyFilters();
+
+/* ── INTEGRACIÓN MAPA ↔ FILTROS ──
+   El mapa emite 'select' al stateBus cuando el usuario hace clic en un estado.
+   Sincronizamos el dropdown de estado y reaplicamos filtros. */
+window.stateBus.on('select', function(estado){
+  const sel = document.getElementById('filterEstado');
+  sel.value = estado || '';
+  applyFilters();
+  document.getElementById('mapaClearBtn').classList.toggle('visible', !!estado);
+});
 </script>
+<script src="js/population.js"></script>
+<script src="js/map.js"></script>
+<script src="js/timeline-data.js"></script>
+<script src="js/rosling-viz.js"></script>
+<script src="js/cross-viz.js"></script>
 </body>
 </html>
